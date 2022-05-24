@@ -173,7 +173,7 @@
         </div>
 		      <ul class="autocomplete-list" id="origin-items-list">
 			      {#each airports.origin as airport, _}
-				      <li itemLabel={airport.iataCode} on:click={(e) => autocompleteSelected('origin', e)}><strong>{airport.iataCode}</strong>  {airport.name}</li>
+				      <li itemLabel={airport.iataCode} on:click|preventDefault|stopPropagation={(e) => autocompleteSelected('origin', e)}><strong>{airport.iataCode}</strong>  {airport.name}</li>
 			      {/each}			
 		      </ul>
       </form>
@@ -192,7 +192,7 @@
         </div>
 		      <ul class="autocomplete-list" id="destination-items-list">
 			      {#each airports.destination as airport, _}
-				      <li itemLabel={airport.iataCode}  on:click={(e) => autocompleteSelected('destination', e)}><strong>{airport.iataCode}</strong>  {airport.name}</li>
+				      <li itemLabel={airport.iataCode}  on:click|preventDefault|stopPropagation={(e) => autocompleteSelected('destination', e)}><strong>{airport.iataCode}</strong>  {airport.name}</li>
 			      {/each}			
 		      </ul>
       </form>
