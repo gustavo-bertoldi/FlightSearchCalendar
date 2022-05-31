@@ -5,7 +5,7 @@
   import FlightsView from "./FlightsView.svelte";
   import { MaterialApp, Row, Col, Snackbar } from 'svelte-materialify';
 
-
+  //One of the ways in Svelte to set a shared variable between the components. Backend URL.
   setContext('API_URL', 'http://localhost:3000')
 
   let calendar;
@@ -13,6 +13,14 @@
   let flightSearch;
   let errorBar = false;
 
+  /**
+   * Listener for the backend's response with search criteria data
+   * @param {object} data
+   * @property {object} data.offers           Offers object received from backend
+   * @property {string} data.originCity 
+   * @property {string} data.destinationCity 
+   * @property {boolean} data.datesChange     True if only dates changed for the request (calendar click)
+   */
   function offersReady(data) {
     if (data.offers.length > 0) {
       flightsView.flightSearchListener(data);
@@ -20,15 +28,25 @@
     }
   }
 
+  /**
+   * Listerner for search button click. Represent a new search all previous data is deleted.
+   */
   function searchClicked() {
     flightsView.resetFlights();
     calendar.resetCalendar();
   }
 
+  /**
+   * Listerner for a click in calendar datepair. New search with only dates changing.
+   * Previous calendar prices are kept in memory.
+   */
   function datesChange() {
     flightsView.resetFlights();
   }
 
+  /**
+   * Error from the backend listener
+   */
   function showError() {
     errorBar = true;
   }
@@ -44,12 +62,23 @@
     </Row>
     <Row class="d-flex justify-center pl-sm-3 pr-sm-3">
       <Col cols={12} sm={12} md={8}>
-        <FlightSearch bind:this={flightSearch} on:searchButtonClicked={searchClicked} on:datesChange={datesChange} on:flightsReady={event => calendar.flightSearchListener(event.detail)} on:offersReady={event => offersReady(event.detail)} on:error={showError}/>
+        <FlightSearch 
+          bind:this={flightSearch} 
+          on:searchButtonClicked={searchClicked}
+          on:datesChange={datesChange}
+          on:flightsReady={event => calendar.flightSearchListener(event.detail)}
+          on:offersReady={event => offersReady(event.detail)}
+          on:error={showError}
+        />
       </Col>
     </Row>
     <Row class="d-flex justify-center pl-sm-3 pr-sm-3">
       <Col sm={12} md={10} lg={8}>
-        <Calendar bind:this={calendar} on:dateClicked={event => flightSearch.newDateSearch(event.detail.depDate, event.detail.retDate)} on:error={showError}/>
+        <Calendar 
+          bind:this={calendar} 
+          on:dateClicked={event => flightSearch.newDateSearch(event.detail.depDate, event.detail.retDate)} 
+          on:error={showError}
+        />
       </Col>
     </Row>
     <Row class="d-flex justify-center pl-sm-3 pr-sm-3">
@@ -62,8 +91,6 @@
     </Snackbar>
   </MaterialApp>
 </main>
-
-
 <style>
 
 </style>

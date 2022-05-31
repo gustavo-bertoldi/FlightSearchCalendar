@@ -15,6 +15,15 @@
   let returnDate;
   let selectedDepartureDate;
   let selectedReturnDate;
+
+  /**
+   * Data used to build the calendar
+   * @property {string[]} calendarData.departures Array with all departure dates current taken into account by the calendar (yyyy-MM-dd)
+   * @property {string[]} calendarData.returns Array with all return dates current taken into account by the calendar (yyyy-MM-dd)
+   * @property {object} calendarData.prices Map from datepairs in the format 'departure>arrival' to theirs prices
+   * @property {number} calendarData.maxPrice Current maximum price in calendar shown datepairs
+   * @property {number} calendarData.minPrice Current minimum price in calendar shown datepairs
+   */
   let calendarData = {
     departures: [],
     returns: [],
@@ -27,6 +36,10 @@
    * Listens to the search event from the FlightSearch component to receive search parameters.
    * Initiates the calendar corresponding to a flight search
    * @param {object} data
+   * @property {object} data.offers Offers object received from backend
+   * @property {string} data.originCity 
+   * @property {string} data.destinationCity 
+   * @property {boolean} data.datesChange True if only dates changed for the request (calendar click)
    */
   export function flightSearchListener(data) {
     departureDate = new Date(data.departureDate);
@@ -39,6 +52,9 @@
     createFlightCalendar(data.flights);
   }
 
+  /**
+   * Resets calendar data and hide it. Used when a new search is fired
+   */
   export function resetCalendar() {
     calendarData = {
       departures: [],
@@ -85,7 +101,7 @@
 
   /**
    * Fetch prices corresponding to new datepairs after scrolling
-   * @param newDatepairs
+   * @param {string[]} newDatepairs Datepairs in the format 'departure>return' (yyyy-MM-dd)
    */
   function fetchNewPrices(newDatepairs) {
     let datepairsFiltered = newDatepairs.filter(datepair => !calendarData.prices[datepair]);
@@ -110,6 +126,11 @@
       .catch(err => dispatch('error'));
   }
 
+  /**
+   * Add prices received in the flights object to the calendar
+   * @param {object} flights Map of a datepair in the format 'departure>return' to an object containing the 
+   * cheapest flight information for the datepair
+   */
   async function addPricesToCalendar(flights) {
     Object.keys(flights).forEach((datepair) => {
       if (flights[datepair] != 'error') {
@@ -132,10 +153,16 @@
     calculateNewPriceBorders();
   }
 
+  /**
+   * Called by the flight search listener to build the calendar based on the data received by the backend
+   * @param flights
+   */
   function createFlightCalendar(flights) {
     let departures = [];
     let returns = [];
 
+    //Adds to departure and return arrays dates corresponding to 3 days before the selected date
+    //as well as 3 days after, resulting in a week-long view on both departure and return dates
     for (let i = -3; i <= 3; i++) {
       departures.push(format(addDays(departureDate, i), 'yyyy-MM-dd'));
       returns.push(format(addDays(returnDate, i), 'yyyy-MM-dd'));
@@ -145,6 +172,9 @@
     addPricesToCalendar(flights);
   }
 
+  /**
+   * Recalculates new maximum and minimum prices based on flights received for the new datepairs
+   */
   function calculateNewPriceBorders() {
     let prices = {};
     document.querySelectorAll('div.calendar-price:not(.na-price):not(.loading) > span').forEach((element) => {
@@ -158,26 +188,43 @@
     if (max != min) calendarData.maxPrice = max.toFixed(2);
   }
 
+  /**
+   * Helper function to show the calendar, its close button and hide the view calendar button
+   */
   function showCalendar() {
     document.querySelector('div.main-container').style.display = 'block';
     document.getElementById('calendar-view-btn').style.display = 'none';
     document.getElementById('calendar-close-btn').style.display = 'block'
   }
 
+  /**
+   * Helper function to hide the calendar and its close button, shows the view calendar button
+   */
   function hideCalendar() {
     document.querySelector('div.main-container').style.display = 'none';
     document.getElementById('calendar-view-btn').style.display = 'block';
     document.getElementById('calendar-close-btn').style.display = 'none'
   }
 
+  /**
+   * Helper function called when the flight offers are received. Shows the calendar view button
+   */
   export function showCalendarButton() {
     document.getElementById('calendar-view-btn').style.display = 'block';
   }
 
+  /**
+   * Helper function to hide calendar view button
+   */
   function hideCalendarButton() {
     document.getElementById('calendar-view-btn').style.display = 'none';
   }
 
+  /**
+   * Manages the click event on a datepair in the calendar. Fires a new search for the new datepair
+   * and recenters the calendar to the chosen date.
+   * @param {Event} event Click event captured by the element. Allow to retrieve the element's data
+   */
   function dateClicked(event) {
     let depDate = event.currentTarget.dataset.departure;
     let retDate = event.currentTarget.dataset.return;

@@ -1,24 +1,34 @@
 <script>
   import { format } from "date-fns";
   import { mdiAirplaneTakeoff, mdiAirplaneLanding, mdiClockTimeFourOutline  } from "@mdi/js";
-  import {
-    MaterialApp,
-    Row,
-    Col,
-    ExpansionPanel,
-    ExpansionPanels,
-    Icon,
-  } from "svelte-materialify";
+  import { MaterialApp, Row, Col, ExpansionPanel, ExpansionPanels, Icon } from "svelte-materialify";
   import { getContext } from "svelte";
 
   const API_URL = getContext('API_URL');
   let offers = [];
   let airlineMap = {};
 
+  /**
+   * Helper function to delete previous flight data
+   */
   export function resetFlights() {
     offers = [];
   }
 
+  /**
+   * Listener for the response of a flights offer search from the FlightSearch component
+   * Prepare this component's data to show the flights offers received
+   * @param {object} data
+   * @property {object} data.flights Response received from the backend containing the flight offers
+   * @property {string} data.departureDate Departure date after verification in the format 'yyyy-MM-dd'
+   * @property {string} data.returnDate Return date after verification in the format 'yyyy-MM-dd'
+   * @property {string} data.origin IATA code of the origin
+   * @property {string} data.destination IATA code of the destination
+   * @property {number} data.adults Number of adults
+   * @property {string} data.class Class selected
+   * @property {string?} data.selectedDepartureDate Departure date entered in the form in the format 'yyyy-MM-dd'. Only present when search is for calendar filling.
+   * @property {string?} data.selectedReturnDate Return date entered in the form in the format 'yyyy-MM-dd'. Only present when search is for calendar filling.
+   */
   export function flightSearchListener(data) {
     const currencyFormatter = Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -70,12 +80,24 @@
     });
   }
 
+  /**
+   * Helper function to convert a uppercase string to first-letter uppercase
+   * Ex.: NEW YORK CITY -> New York City
+   * @param {string} str Input uppercase string
+   * @returns {string} Output
+   */
   function formatString(str) {
     str = str.split(' ');
     str = str.map(word => word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
     return str.join(' ');
   }
 
+  /**
+   * Helper function to build a map-like object from airline code to its business name
+   * Ex.: DL -> DELTA AIRLINES
+   * @param {object} offers Offers received from backend, from which the airline codes are going to be extracted
+   * @returns {Promise} Resolves when response is received from backed and map is ready
+   */
   function buildAirlineMap(offers) {
     return new Promise((resolve, reject) => {
       let airlines = [];
