@@ -106,7 +106,8 @@
     
     fetch(request)
       .then(response => response.json())
-      .then(async flights => await addPricesToCalendar(flights));
+      .then(async flights => await addPricesToCalendar(flights))
+      .catch(err => dispatch('error'));
   }
 
   async function addPricesToCalendar(flights) {

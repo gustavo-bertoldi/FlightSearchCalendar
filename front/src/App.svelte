@@ -3,7 +3,7 @@
   import Calendar from "./Calendar.svelte";
   import FlightSearch from "./FlightSearch.svelte";
   import FlightsView from "./FlightsView.svelte";
-  import { MaterialApp, Row, Col } from 'svelte-materialify';
+  import { MaterialApp, Row, Col, Snackbar } from 'svelte-materialify';
 
 
   setContext('API_URL', 'http://localhost:3000')
@@ -11,6 +11,7 @@
   let calendar;
   let flightsView;
   let flightSearch;
+  let errorBar = false;
 
   function offersReady(data) {
     if (data.offers.length > 0) {
@@ -28,6 +29,10 @@
     flightsView.resetFlights();
   }
 
+  function showError() {
+    errorBar = true;
+  }
+
 </script>
 
 <main>
@@ -39,12 +44,12 @@
     </Row>
     <Row class="d-flex justify-center pl-sm-3 pr-sm-3">
       <Col cols={12} sm={12} md={8}>
-        <FlightSearch bind:this={flightSearch} on:searchButtonClicked={searchClicked} on:datesChange={datesChange} on:flightsReady={event => calendar.flightSearchListener(event.detail)} on:offersReady={event => offersReady(event.detail)}/>
+        <FlightSearch bind:this={flightSearch} on:searchButtonClicked={searchClicked} on:datesChange={datesChange} on:flightsReady={event => calendar.flightSearchListener(event.detail)} on:offersReady={event => offersReady(event.detail)} on:error={showError}/>
       </Col>
     </Row>
     <Row class="d-flex justify-center pl-sm-3 pr-sm-3">
       <Col sm={12} md={10} lg={8}>
-        <Calendar bind:this={calendar} on:dateClicked={event => flightSearch.newDateSearch(event.detail.depDate, event.detail.retDate)}/>
+        <Calendar bind:this={calendar} on:dateClicked={event => flightSearch.newDateSearch(event.detail.depDate, event.detail.retDate)} on:error={showError}/>
       </Col>
     </Row>
     <Row class="d-flex justify-center pl-sm-3 pr-sm-3">
@@ -52,6 +57,9 @@
         <FlightsView bind:this={flightsView}/>
       </Col>
     </Row>
+    <Snackbar class="flex-column" bind:active={errorBar} top center timeout={5000}>
+      An internal error occurred. Please try again.
+    </Snackbar>
   </MaterialApp>
 </main>
 

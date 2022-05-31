@@ -93,6 +93,14 @@
     document.getElementById('calendar-view-btn').style.visibility = 'visible';
   }
 
+  function autocompleteStartLoading(input) {
+    document.getElementById(`${input}-autocomplete-load`).style.display = 'block';
+  }
+
+  function autocompleteStopLoading(input) {
+    document.getElementById(`${input}-autocomplete-load`).style.display = 'none';
+  }
+
   function getFormData(forCalendar) {
     let formData = {};
     let departureDate = new Date(flightDepartureDate);
@@ -142,6 +150,10 @@
         if (!datesChange) {
           flightSearchCalendar();
         }
+      })
+      .catch(err => {
+        stopLoading();
+        dispatch('error');
       });
   }
 
@@ -168,7 +180,8 @@
           selectedDepartureDate: formData.selectedDepartureDate,
           selectedReturnDate: formData.selectedReturnDate
         });
-      });
+      })
+      .catch(err => dispatch('error'));;
   }
 
   function departureDateSelected() {
@@ -192,7 +205,7 @@
 
   function searchSuggestion(keyword, input) {
     if (!keyword) return
-    document.getElementById(`${input}-autocomplete-load`).style.display = 'block';
+    autocompleteStartLoading(input);
     const apiURL = `${API_URL}/search-suggestions?keyword=${keyword}`;
     const request = new Request(apiURL, { method: 'GET' });
     fetch(request)
@@ -206,8 +219,8 @@
             cityName: formatString(sugg.address.cityName)
           });
         });
-        document.getElementById(`${input}-autocomplete-load`).style.display = 'none';
-      });
+      })
+      .finally(() => autocompleteStopLoading(input));
   }
 
   function autocompleteSelected(input, suggestion) {

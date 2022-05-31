@@ -9,8 +9,7 @@
     ExpansionPanels,
     Icon,
   } from "svelte-materialify";
-  import { getContext, onMount } from "svelte";
-  import * as breakpoints from "svelte-materialify/src/utils/breakpoints.js";
+  import { getContext } from "svelte";
 
   const API_URL = getContext('API_URL');
   let offers = [];
@@ -144,7 +143,7 @@
         </span>
         <Row class="d-flex align-center">
           {#each offer.itineraries[0].segments as segment, i }
-            {@const airlineBName = airlineMap[segment.carrierCode] ? airlineMap[segment.carrierCode].businessName : ''}
+            {@const airlineBName = airlineMap[segment.operating.carrierCode] ? airlineMap[segment.operating.carrierCode].businessName : ''}
             <Col cols={12} lg={2} class="flight-details d-flex justify-center">
               <div class="d-flex flex-column">
                 <span class="flight-row">
@@ -159,7 +158,7 @@
                   <Icon class="flight-row-icon" size="25px" path={mdiAirplaneLanding}/>
                   {segment.arrival.iataCode}  &bull; {segment.arrivalTime}
                 </span>
-                <span class="flight-details">{segment.carrierCode} {segment.number} &bull; {airlineBName}</span>
+                <span class="flight-details">{segment.carrierCode} {segment.number} &bull; Operated by {airlineBName}</span>
               </div>
             </Col>
             {#if i < offer.itineraries[0].segments.length - 1}

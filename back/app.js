@@ -74,6 +74,7 @@ function getCheapestDates(origin, destination, departureDate, returnDate, adults
         }).catch((err) => {
           errorCount++;
           flights[datepair] = 'error';
+          console.error(`Get cheapest dates. Error ${err.response.statusCode} - ${err.description[0].title}`);
           if (err.response.statusCode != 429) reject(err);
         }).finally(() => {
           responseCount++;
