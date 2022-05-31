@@ -1,17 +1,20 @@
 
 <script>
-  import { onMount, getContext, tick } from 'svelte';
+  import { onMount, getContext, tick, createEventDispatcher } from 'svelte';
   import { format, addDays, isAfter, isBefore } from 'date-fns';
-  import { ProgressCircular, ProgressLinear, Icon } from 'svelte-materialify';
-  import { mdiArrowLeftBold, mdiArrowRightBold, mdiArrowUpBold, mdiArrowDownBold } from '@mdi/js'
+  import { ProgressCircular, ProgressLinear, Icon, Row, Col, Button, Overlay } from 'svelte-materialify';
+  import { mdiArrowLeftBold, mdiArrowRightBold, mdiArrowUpBold, mdiArrowDownBold, mdiCalendar, mdiClose } from '@mdi/js'
 
   const API_URL = getContext('API_URL');
 
+  let dispatch = createEventDispatcher();
   let origin;
   let destination;
   let adults;
   let departureDate;
   let returnDate;
+  let selectedDepartureDate;
+  let selectedReturnDate;
   let calendarData = {
     departures: [],
     returns: [],
@@ -31,6 +34,12 @@
     adults = data.adults;
     origin = data.origin;
     destination = data.destination;
+    selectedDepartureDate = data.selectedDepartureDate;
+    selectedReturnDate = data.selectedReturnDate;
+    createFlightCalendar(data.flights);
+  }
+
+  export function resetCalendar() {
     calendarData = {
       departures: [],
       returns: [],
@@ -38,8 +47,8 @@
       maxPrice: 0,
       minPrice: Infinity
     };
-    createFlightCalendar(data.flights);
-    document.querySelector('div.main-container').style.display = 'block';
+    hideCalendar();
+    hideCalendarButton();
   }
 
   /**
@@ -148,14 +157,62 @@
     if (max != min) calendarData.maxPrice = max.toFixed(2);
   }
 
+  function showCalendar() {
+    document.querySelector('div.main-container').style.display = 'block';
+    document.getElementById('calendar-view-btn').style.display = 'none';
+    document.getElementById('calendar-close-btn').style.display = 'block'
+  }
+
+  function hideCalendar() {
+    document.querySelector('div.main-container').style.display = 'none';
+    document.getElementById('calendar-view-btn').style.display = 'block';
+    document.getElementById('calendar-close-btn').style.display = 'none'
+  }
+
+  export function showCalendarButton() {
+    document.getElementById('calendar-view-btn').style.display = 'block';
+  }
+
+  function hideCalendarButton() {
+    document.getElementById('calendar-view-btn').style.display = 'none';
+  }
+
+  function dateClicked(event) {
+    let depDate = event.currentTarget.dataset.departure;
+    let retDate = event.currentTarget.dataset.return;
+    selectedDepartureDate = depDate;
+    selectedReturnDate = retDate;
+
+    //relX and relY are the relative positions of the clicked data to the original selected data
+    let relX = event.currentTarget.dataset.relx;
+    let relY = event.currentTarget.dataset.rely;
+    if (!(relX === 0 && relY === 0)) {
+      dispatch('dateClicked', {depDate: depDate, retDate: retDate});
+
+      let directionX = relX < 0 ? -1 : 1;
+      let directionY = relY < 0 ? -1 : 1;
+
+      for (let i = 0; i < Math.abs(relX); i++) {
+          scrollDate(directionX, 'departures');
+      }
+
+      for (let i = 0; i < Math.abs(relY); i++) {
+          scrollDate(directionY, 'returns');
+      }
+    }
+  }
+
   onMount(() => {
     //Set dynamic style properties
     let calendarWidth = document.querySelector('div.calendar-container').style.width;
     document.querySelector('div.departure-date-control').style.width = calendarWidth;
-    //createCalendar(new Date(2022,7,10), new Date(2022,7,20));
   });
   
 </script>
+<div class="control-panel d-flex justify-end">
+  <Button class="white-text" id="calendar-view-btn" on:click={showCalendar} style="display: none;"><Icon path={mdiCalendar} class="mr-3" />Calendar View</Button>
+  <Button class="red white-text" id="calendar-close-btn" on:click={hideCalendar} style="display: none;"><Icon size="15px" path={mdiClose} class="mr-3" />Close</Button>
+</div>
 <div class="main-container">
   <div class="departure-date-control arrow-controls">
     <div on:click={() => scrollDate(-1, 'departures')}><Icon size="35px" path={mdiArrowLeftBold}/></div>
@@ -188,12 +245,15 @@
                             + `${priceObj.priceFormatted == 'N/A' ? ' na-price' : ''}`
                             + `${Object.keys(priceObj).length === 0 ? ' loading' : ''}`
                             + `${(i == 7 && j == 0) ? ' bottom-left-corner' : ''}`
+                            + `${(selectedDepartureDate && selectedDepartureDate == calendarData.departures[j] && selectedReturnDate == calendarData.returns[i - 1]) ? ' selected-dates' : ''}`
             }
-            <div class={classes}>
+            {@const relY = i - 4}
+            {@const relX = j - 3}
+            <div class={classes} data-departure={calendarData.departures[j]} data-return={calendarData.returns[i - 1]} data-relx={relX} data-rely={relY} on:click={(e) => dateClicked(e)}>
               {#if priceObj.price}
                 <span class="calendar-item-text" data-price={priceObj.price}>{priceObj.priceFormatted}</span>
               {:else}
-                <ProgressCircular indeterminate color="rgb(22, 84, 135)"/>
+                <ProgressCircular indeterminate color="rgb(0,94,184)"/>
               {/if}
             </div>
           {/if}
@@ -207,22 +267,24 @@
   </div>
 </div>
 
+
 <style>
   :root {
-    --calendar-background: #165487;
-    --calendar-dates: #3d86cf;
-    --calendar-cheap: #dcebcb;
-    --calendar-expensive: #ffcdd2;
-    --calendar-prices: #d5e7ef;
-    --calendar-loading: #efefed;
-    --calendar-hover: #dfecf8;
-    --calendar-cheap-hover: #dfe4d9;
-    --calendar-expensive-hover: #fbdcdf;
+    --calendar-background: rgb(0, 62, 121);
+    --calendar-dates: rgb(0,94,184);
+    --calendar-cheap: rgb(101, 206, 152);
+    --calendar-expensive: rgb(213, 122, 161);
+    --calendar-prices: rgb(155,202,236);
+    --calendar-loading: rgb(202, 220, 233);
+    --calendar-hover: rgb(184, 213, 233);
+    --calendar-cheap-hover: rgb(143, 223, 181);
+    --calendar-expensive-hover: rgb(231, 154, 188);;
     --calendar-na: var(--calendar-loading);
-    --arrows-hover: rgb(0, 98, 128);
-    --price-color: #165487;
-    --cheap-price-color: #19480f;
-    --expensive-price-color: #b61827;
+    --arrows: rgb(0,94,184);
+    --arrows-hover: rgb(0,169,224);
+    --price-color: rgb(0, 53, 102);
+    --cheap-price-color: rgb(0, 85, 41);
+    --expensive-price-color: rgb(124, 0, 54);
   }
 
   @font-face {
@@ -269,6 +331,7 @@
 
   div.calendar-item.calendar-price.loading {
     background-color: var(--calendar-loading);
+    pointer-events: none;
   }
 
   div.calendar-item.calendar-price.loading:hover {
@@ -294,6 +357,7 @@
 
   div.calendar-item:global(.na-price) {
     background-color: var(--calendar-na);
+    pointer-events: none;
   }
 
   div.calendar-item.calendar-price:global(.na-price:hover) {
@@ -302,7 +366,7 @@
   }
 
   div.calendar-item.calendar-price > span {
-    font-weight: 700;
+    font-weight: 500;
     color: var(--price-color);
     padding: 5px;
   }
@@ -316,7 +380,7 @@
   }
 
   div.calendar-item.calendar-date > span {
-    font-weight: 700;
+    font-weight: 500;
     padding: 5px;
     color: white;
   }
@@ -326,9 +390,18 @@
     background-color: var(--calendar-hover);
   }
 
-  span.calendar-item-text {
-    font-family: 'Nunito', sans-serif;
+  div.calendar-item.calendar-price.selected-dates {
+    box-shadow: inset 0px 0px 18px 5px var(--calendar-dates);
   }
+
+  div.calendar-item.calendar-price.expensive.selected-dates {
+    box-shadow: inset 0px 0px 18px 5px var(--expensive-price-color);
+  }
+
+  div.calendar-item.calendar-price.cheapest.selected-dates {
+    box-shadow: inset 0px 0px 18px 5px var(--cheap-price-color);
+  }
+
 
   /*Define rounded corners on corner cells*/
   /*--------------------------------------*/
@@ -368,7 +441,7 @@
   }
 
   div.arrow-controls :global(svg) {
-    color: var(--calendar-background);
+    color: var(--arrows);
   }
 
   div.arrow-controls :global(svg:hover) {

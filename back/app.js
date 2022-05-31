@@ -44,13 +44,15 @@ let lastSearchRequest = new Date();
  * @param {string} departureDate in yyyy-MM-dd format
  * @param {string} returnDate in yyyy-MM-dd format
  */
-function getCheapestDates(origin, destination, departureDate, returnDate, adults) {
+function getCheapestDates(origin, destination, departureDate, returnDate, adults, travelClass) {
   return new Promise(async (resolve, reject) => {
     let depDate = new Date(departureDate);
     let retDate = new Date(returnDate);
     let flights = {};
     let responseCount = 0;
     let errorCount = 0;
+
+    await wait(100);
 
     for (let i = -3; i <= 3; i++) {
       let currentDepDate = format(addDays(depDate, i), 'yyyy-MM-dd');
@@ -65,7 +67,8 @@ function getCheapestDates(origin, destination, departureDate, returnDate, adults
           departureDate: currentDepDate,
           returnDate: currentRetDate,
           adults: adults,
-          max: 1
+          max: 1,
+          travelClass: travelClass
         }).then((response) => {
           flights[datepair] = response.data;
         }).catch((err) => {
@@ -95,7 +98,7 @@ function getCheapestDates(origin, destination, departureDate, returnDate, adults
  * @param {number} adults 
  * @param {object} datepairs  
  */
-function getCheapestDatepairs(origin, destination, adults, datepairs) {
+function getCheapestDatepairs(origin, destination, adults, datepairs, travelClass) {
   return new Promise(async (resolve, reject) => {
     let flights = {};
     let responseCount = 0;
@@ -115,7 +118,8 @@ function getCheapestDatepairs(origin, destination, adults, datepairs) {
         departureDate: departureDate,
         returnDate: returnDate,
         adults: adults,
-        max: 1
+        max: 1,
+        travelClass: travelClass
       }).then((response) => {
         flights[datepair] = response.data;
       }).catch((err) => {
@@ -139,12 +143,49 @@ function getCheapestDatepairs(origin, destination, adults, datepairs) {
 function getSearchSuggestions(keyword) {
   return new Promise((resolve, reject) => {
     amadeus.referenceData.locations.get({
-      subType: Amadeus.location.airport,
-      keyword: keyword,
-      view: 'LIGHT'
+      subType: Amadeus.location.any,
+      keyword: keyword
     })
     .then(response => resolve(response))
     .catch(err => reject(err))
+  });
+}
+
+function getFlightOffers(origin, destination, departureDate, returnDate, adults, travelClass) {
+  return new Promise(async (resolve, reject) => {
+    await wait(100);
+    amadeus.shopping.flightOffersSearch.get({
+      originLocationCode: origin,
+      destinationLocationCode: destination,
+      departureDate: departureDate,
+      returnDate: returnDate,
+      adults: adults,
+      max: 30,
+      travelClass: travelClass
+    }).then((response) => {
+      resolve(response.data);
+    }).catch((err) => {
+      reject(err);
+    });
+  });
+}
+
+function airlineLookup(airlines) {
+  let airlineCodes = airlines.reduce((acc, airline, i) => {
+    acc += airline;
+    if (i !== airlines.length - 1) acc += ',';
+    return acc;
+  }, '');
+
+  return new Promise(async (resolve, reject) => {
+    await wait(100);
+    amadeus.referenceData.airlines.get({
+      airlineCodes: airlineCodes
+    }).then((response) => {
+      resolve(response.data);
+    }).catch((err) => {
+      reject(err);
+    });
   });
 }
 
@@ -155,7 +196,7 @@ app.listen(PORT, () => {
 });
 
 app.get('/calendar-view', (req, res) => {
-  getCheapestDates(req.query.origin, req.query.destination, req.query.departureDate, req.query.returnDate, req.query.adults)
+  getCheapestDates(req.query.origin, req.query.destination, req.query.departureDate, req.query.returnDate, req.query.adults, req.query.travelClass)
     .then((flights) => res.send(flights))
     .catch((err) => {
       res.status(500).send(err);
@@ -163,18 +204,37 @@ app.get('/calendar-view', (req, res) => {
 });
 
 app.post('/flights-for-datepairs', (req, res) => {
-  getCheapestDatepairs(req.body.origin, req.body.destination, req.body.adults, req.body.datepairs)
-    .then((flights) => res.send(flights))
-    .catch((err) => {
+  getCheapestDatepairs(req.body.origin, req.body.destination, req.body.adults, req.body.datepairs, req.body.travelClass)
+    .then(flights => res.send(flights))
+    .catch(err => {
+      console.error(err)
       res.status(500).send(err);
     });
 });
 
-app.get('/search-suggestions', async (req, res) => {
+app.get('/search-suggestions', (req, res) => {
   getSearchSuggestions(req.query.keyword)
     .then(suggestions => res.send(suggestions))
     .catch(err => {
-      console.log(err)
+      console.error(err)
       res.status(500).send(err)
-    })
+    });
+});
+
+app.get('/get-flight-offers', (req, res) => {
+  getFlightOffers(req.query.origin, req.query.destination, req.query.departureDate, req.query.returnDate, req.query.adults, req.query.travelClass)
+    .then(flights => res.send(flights))
+    .catch(err => {
+      console.error(err);
+      res.status(500).send(err);
+    });
+});
+
+app.post('/airline-lookup', (req, res) => {
+  airlineLookup(req.body)
+    .then(airlines => res.send(airlines))
+    .catch(err => {
+      console.error(err);
+      res.status(500).send(err);
+    });
 });
