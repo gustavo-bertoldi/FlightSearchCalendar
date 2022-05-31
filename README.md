@@ -9,7 +9,7 @@ Then simply run the command ```docker-compose up``` in the root directory. App w
 
 ## Run locally
 Set up your Amadeus credentials using the environment variables ```AMADEUS_CLIENT_ID``` and ```AMADEUS_CLIENT_SECRET```.
-Alternatively you can use a ```.env``` file in the ````./back``` directory to set up the variables.
+Alternatively you can use a ```.env``` file in the ```./back``` directory to set up the variables.
 
 To lauch the backend, in the ```back``` folder run the following commands ```npm install``` if it is the first launch, then ```npm run serve```
 
