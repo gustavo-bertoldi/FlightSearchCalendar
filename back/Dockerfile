@@ -1,0 +1,17 @@
+FROM node:18-alpine
+
+WORKDIR /back
+
+ENV PORT=3000
+ENV AMADEUS_CLIENT_ID=YOUR_CLIENT_ID
+ENV AMADEUS_CLIENT_SECRET=YOUR_SECRET
+
+COPY package.json ./
+
+RUN npm i
+
+COPY . .
+
+EXPOSE 3000
+
+CMD npm run serve
