@@ -197,12 +197,6 @@
 </MaterialApp>
 
 <style>
-  @font-face {
-    font-family: "Nunito";
-    font-style: normal;
-    font-weight: 700;
-    src: "https://fonts.googleapis.com/css?family=Nunito";
-  }
   span.flight-row {
     font-weight: bold;
     display: flex;

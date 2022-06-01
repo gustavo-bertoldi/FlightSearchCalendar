@@ -8,7 +8,9 @@
   const AMADEUS_BLUE = 'rgb(0,94,184)';
   const dispatch = createEventDispatcher();
 
-  //Autocomplete
+  //Autocomplete variables
+  //The timeouts are used to store the interval between keypresses by the user
+  //The objective is to start a request to the autocomplete service when user stops typing
   let originTimeout;
   let destinationTimeout;
   const timeoutInterval = 750;
@@ -16,12 +18,17 @@
     origin: [],
     destination: []
   }
+
+  //Form values, the initialized values are the default ones in the form, no values means an empty field
   let flightOneWayRoundtrip = 'Roundtrip';
   let flightOneWayRoundtripMenuActive;
   let flightClass = 'Economy'
   let classMenuActive;
   let originInput = 'JFK - New York';
   let destinationInput = 'LAX - Los Angeles';
+  //Variables starting with a $ are Svelte's dynamic variables. They are recalculated each time
+  //one of it's dependent variables changes value. Used to calculate origin and destination IATA codes
+  //from the input fields that are in the format 'IATA - City name'
   $: flightOrigin = originInput.substring(0,3);
   $: flightDestination = destinationInput.substring(0,3);
   let originCity = 'New York';
@@ -31,6 +38,8 @@
   let nbAdults = '1';
   let searchActive = true;
 
+  //Rules to check form validity
+  //Origin can't be empty neither equal to destination
   const originRules = [
     (v) => {
       searchActive = false;
@@ -43,6 +52,7 @@
       return true;
     }
   ]
+  //Destination can't be empty neither equal to origin
   const destinationRules = [
     (v) => {
       searchActive = false;
@@ -55,16 +65,30 @@
       return true;
     }
   ]
+  //Departure date can't be empty
   const departureDateRules = [
     (v) => !!v || 'Please enter the date of departure'
   ]
+  //Return date can't be empty
   const returnDateRules = [
     (v) => !!v || 'Please enter the date of return'
   ]
+  //Adults can't be empty
   const adultsRules = [
     (v) => !!v || 'Please enter number of adults'
   ]
 
+  /**
+   * Helper function to validate dates
+   * This function advances the selected date by one, two or three days depending on the distance of
+   * today's date. This needs to be done because calendar shows prices from up to three days before
+   * the selected dates, but these dates can't be in the past.
+   * Ex.: The user selects tomorrow date as departure date, dates from -1 and -2 days would be in the
+   * past. So we advance the selected date by two days to avoid past dates while keeping the selected
+   * date shown in the calendar.
+   * @param {Date} date Date to be verified
+   * @return {Date} Verified and valid date 
+   */
   function dateVerification(date) {
     const today = new Date();
     const tomorrow = addDays(today, 1);
@@ -81,26 +105,46 @@
     return date;
   }
 
+  /**
+   * Helper function to start loading.
+   */
   function startLoading() {
     document.getElementById('loader-container').style.display = 'flex';
     document.getElementById('search-flights-btn').style.display = 'none';
     document.getElementById('calendar-view-btn').style.visibility = 'hidden';
   }
 
+  /**
+   * Helper function to stop loading.
+   */
   function stopLoading() {
     document.getElementById('loader-container').style.display = 'none';
     document.getElementById('search-flights-btn').style.display = 'block';
     document.getElementById('calendar-view-btn').style.visibility = 'visible';
   }
 
+  /**
+   * Helper function to start loading on input field given in parameter
+   * @param {string} input Input field. Can take values 'origin' and 'destination'
+   */
   function autocompleteStartLoading(input) {
     document.getElementById(`${input}-autocomplete-load`).style.display = 'block';
   }
 
+  /**
+   * Helper function to stop loading on input field given in parameter
+   * @param {string} input Input field. Can take values 'origin' and 'destination'
+   */
   function autocompleteStopLoading(input) {
     document.getElementById(`${input}-autocomplete-load`).style.display = 'none';
   }
 
+  /**
+   * Helper function to retrieve and prepare data entered in the search form to be sent in the request
+   * @param {boolean} forCalendar This parameter is used to perform additional verification on date fields
+   * and return additional parameter in the case of a calendar scroll
+   * @returns {object} Object containing all the needed data, after treatment, to be sent in the request
+   */
   function getFormData(forCalendar) {
     let formData = {};
     let departureDate = new Date(flightDepartureDate);
@@ -122,6 +166,14 @@
     return formData;
   }
 
+  /**
+   * Sends the request to the backend and dispatches an event when the response is received.
+   * The parameter datesChange indicates that the source of the new request is a click on a
+   * new datepair in the calendar. This dispatches a different event because the responses
+   * are treated differently.
+   * @param {boolean} datesChange Indicates if the source of the request is a click on a
+   * new datepair in the calendar
+   */
   function flightSearch(datesChange) {
     const formData = getFormData(false);
     if (datesChange) dispatch('datesChange', {depDate: formData.departureDateFormatted, retDate: formData.returnDateFormatted});
@@ -157,6 +209,9 @@
       });
   }
 
+  /**
+   * Sends a request to the backend to retrieve the prices for the calendar component
+   */
   function flightSearchCalendar() {
     const formData = getFormData(true);
     const apiURL = `${API_URL}/calendar-view`
@@ -184,6 +239,10 @@
       .catch(err => dispatch('error'));;
   }
 
+  /**
+   * Listener to departure date change, perform date verification and sets the minimum
+   * return date to the selected one.
+   */
   function departureDateSelected() {
     let dateSelected = document.getElementById('fs-flight-departure-date')?.value;
     let returnDate = document.getElementById('fs-flight-return-date')?.value;
@@ -196,6 +255,12 @@
     }
   }
 
+  /**
+   * Helper function to convert a uppercase string to first-letter uppercase
+   * Ex.: NEW YORK CITY -> New York City
+   * @param {string} str Input uppercase string
+   * @returns {string} Output
+   */
   function formatString(str) {
     str = str.split(' ');
     str = str.map(word => word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
@@ -203,6 +268,11 @@
   }
 
 
+  /**
+   * Listener for keydown event. Sends the autocomplete request
+   * @param {string} keyword Value of input field 
+   * @param {string} input Input field, can take values 'origin' and 'destination'
+   */
   function searchSuggestion(keyword, input) {
     if (!keyword) return
     autocompleteStartLoading(input);
@@ -223,6 +293,13 @@
       .finally(() => autocompleteStopLoading(input));
   }
 
+  /**
+   * Listener when user selects a suggestion from the autocomplete list
+   * Inserts the selected suggestion in the corresponding input field
+   * @param {string} input Input, can take values 'origin' and 'destination'
+   * @param {object} suggestion Object containing the selected suggestion data
+   * such as IATA code and city name.
+   */
   function autocompleteSelected(input, suggestion) {
     if (input == 'origin') {
       originCity = suggestion.cityName;
@@ -236,12 +313,20 @@
     flightInput.dispatchEvent(new Event('input'));
   }
 
+  /**
+   * Listener to event from the Calendar component when a new datepair is selected
+   * @param {string} depDate New departure date in the format 'yyyy-MM-dd'
+   * @param {string} retDate New return date in the format 'yyyy-MM-dd'
+   */
   export function newDateSearch(depDate, retDate) {
     document.getElementById('fs-flight-departure-date').value = depDate;
     document.getElementById('fs-flight-return-date').value = retDate;
     flightSearch(true);
   }
 
+  /**
+   * Svelte's onMount function is called when DOM finished loading.
+  */
   onMount(() => {
     //Flight origin autocomplete event listeners
     document.getElementById('fs-flight-origin').addEventListener('focus', () => {

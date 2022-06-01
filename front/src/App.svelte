@@ -29,7 +29,7 @@
   }
 
   /**
-   * Listerner for search button click. Represent a new search all previous data is deleted.
+   * Listener for search button click. Represent a new search all previous data is deleted.
    */
   function searchClicked() {
     flightsView.resetFlights();
@@ -37,7 +37,7 @@
   }
 
   /**
-   * Listerner for a click in calendar datepair. New search with only dates changing.
+   * Listener for a click in calendar datepair. New search with only dates changing.
    * Previous calendar prices are kept in memory.
    */
   function datesChange() {

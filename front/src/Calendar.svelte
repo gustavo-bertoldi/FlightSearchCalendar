@@ -334,14 +334,7 @@
     --cheap-price-color: rgb(0, 85, 41);
     --expensive-price-color: rgb(124, 0, 54);
   }
-
-  @font-face {
-    font-family: 'Nunito';
-    font-style: normal;
-    font-weight: 700;
-    src: "https://fonts.googleapis.com/css?family=Nunito";
-  }
-
+  
   div.main-container {
     display: none;
   }
