@@ -433,6 +433,7 @@
 
   div.calendar-item.calendar-price.selected-dates {
     box-shadow: inset 0px 0px 18px 5px var(--calendar-dates);
+    pointer-events: none;
   }
 
   div.calendar-item.calendar-price.expensive.selected-dates {

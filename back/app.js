@@ -8,18 +8,19 @@ require('dotenv/config');
 
 //Load server parameters
 const PORT = process.env.PORT || 3000;
-if (!process.env.AMADEUS_CLIENT_ID) throw new Error('API_KEY environment vairable could not be read');
-if (!process.env.AMADEUS_CLIENT_SECRET) throw new Error('API_SECRET environment vairable could not be read');
+if (!process.env.AMADEUS_CLIENT_ID) throw new Error('API_KEY environment variable could not be read');
+if (!process.env.AMADEUS_CLIENT_SECRET) throw new Error('API_SECRET environment variable could not be read');
 
 //Configure express
 let app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(function(req, res, next) {
-  res.header("Access-Control-Allow-Origin", "http://localhost:8080");
+app.use(function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", "http://localhost:5000");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   next();
 });
+
 
 //Configure Amadeus
 let amadeus = new Amadeus();

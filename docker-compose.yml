@@ -2,12 +2,12 @@ version: "3.9"
 services:
   front:
     build: ./front
-    image: calendar-front
+    container_name: frontend
     ports:
-      - "8080:8080"
+      - "5000:5000"
 
   back:
     build: ./back
-    image: calendar-back
-    ports: 
+    container_name: backend
+    ports:
       - "3000:3000"
