@@ -29,7 +29,7 @@
    * @property {string?} data.selectedDepartureDate Departure date entered in the form in the format 'yyyy-MM-dd'. Only present when search is for calendar filling.
    * @property {string?} data.selectedReturnDate Return date entered in the form in the format 'yyyy-MM-dd'. Only present when search is for calendar filling.
    */
-  export function flightSearchListener(data) {
+  export async function flightSearchListener(data) {
     const currencyFormatter = Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: data.offers[0].price.currency
@@ -48,9 +48,8 @@
       offer.departureTime = format(departureDate, 'HH:mm');
       offer.arrivalTime = format(arrivalDate, 'HH:mm');
 
-      let durationHours = offer.itineraries[0].duration.split('PT')[1].split('H')[0];
-      let durationMinutes = offer.itineraries[0].duration.split('PT')[1].split('H')[1].split('M')[0];
-      offer.totalDuration = `${durationHours} h ${durationMinutes} min`;
+
+      offer.totalDuration = formatDuration(offer.itineraries[0].duration);
 
       offer.departureAirport = offer.itineraries[0].segments[0].departure.iataCode;
       offer.arrivalAirport = offer.itineraries[0].segments[nbSegments - 1].arrival.iataCode;
@@ -63,9 +62,7 @@
         let arrivalTime = new Date(segment.arrival.at);
         segment.arrivalTime = format(arrivalTime, 'HH:mm');
 
-        let durationHours = segment.duration.split('PT')[1].split('H')[0];
-        let durationMinutes = segment.duration.split('PT')[1].split('H')[1].split('M')[0];
-        segment.duration = `${durationHours} h ${durationMinutes} min`;
+        segment.duration = formatDuration(segment.duration);
         segment.segmentClass = formatString(offer.travelerPricings[0].fareDetailsBySegment.find(fd => fd.segmentId === segment.id).cabin.replace('_', ' ')) || '';
 
         if (i < nbSegments - 1) {
@@ -79,6 +76,32 @@
       });
       return offer;
     });
+  }
+
+  /**
+   * Helper function to convert a string in the format PTxxHyyM to xx h yy m
+   * Takes into account special cases when hours or minutes are equal to zero
+   * @param str Input value
+   * @return Formatted string
+   */
+  function formatDuration(str) {
+    let hasHours = str.includes('H');
+    let hasMinutes = str.includes('M')
+    let durationHours = hasHours ? str.split('PT')[1].split('H')?.[0] : '0';
+    let durationMinutes;
+    let formatted;
+
+    if (hasHours && hasMinutes) {
+      durationMinutes = str.split('PT')[1].split('H')[1].split('M')[0];
+      formatted = `${durationHours} h ${durationMinutes} min`;
+    } else if (hasMinutes) {
+      durationMinutes = str.split('PT')[1].split('M')[0];
+      formatted = `${durationMinutes} min`;
+    } else {
+      formatted = `${durationHours} h`;
+    }
+
+    return formatted;
   }
 
   /**
@@ -172,7 +195,8 @@
         <Row class="d-flex align-center justify-center">
           {@const flightColSize = offer.itineraries[0].segments.length <= 2 ? 4 : 2}
           {#each offer.itineraries[0].segments as segment, i }
-            {@const airlineBName = airlineMap?.[segment.operating?.carrierCode] ? airlineMap[segment.operating.carrierCode].businessName : ''}
+            {@const segCarrCode = segment?.operating?.carrierCode || segment?.carrierCode}
+            {@const carrBusinessName = airlineMap[segCarrCode]?.businessName || ''}
             <Col cols={12} lg={flightColSize} class="flight-details d-flex justify-center">
               <div class="d-flex flex-column">
                 <span class="flight-row justify-center">
@@ -188,7 +212,7 @@
                   {segment.arrival.iataCode}  &bull; {segment.arrivalTime}
                 </span>
                 <span class="flight-details justify-center" style="width: 100%">
-                  {segment.carrierCode} {segment.number} &bull; Operated by {airlineBName} &bull; {segment.segmentClass}
+                  {segment.carrierCode} {segment.number} &bull; Operated by {carrBusinessName} &bull; {segment.segmentClass}
                 </span>
               </div>
             </Col>

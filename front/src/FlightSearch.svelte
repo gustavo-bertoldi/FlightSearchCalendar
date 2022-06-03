@@ -206,6 +206,7 @@
       })
       .catch(err => {
         stopLoading();
+        console.log(err)
         dispatch('error');
       });
   }
@@ -239,7 +240,10 @@
           travelClass: formData.class
         });
       })
-      .catch(err => dispatch('error'));;
+      .catch(err => {
+        console.log(err)
+        dispatch('error')
+      });
   }
 
   /**
