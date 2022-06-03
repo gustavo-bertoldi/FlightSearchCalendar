@@ -11,3 +11,10 @@ services:
     container_name: backend
     ports:
       - "3000:3000"
+  
+  nginx:
+    depends_on:
+      - front
+      - back
+    image: nginx:alpine
+    container_name: nginx
