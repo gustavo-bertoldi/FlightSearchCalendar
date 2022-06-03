@@ -15,6 +15,7 @@
   let returnDate;
   let selectedDepartureDate;
   let selectedReturnDate;
+  let travelClass;
 
   /**
    * Data used to build the calendar
@@ -49,6 +50,7 @@
     destination = data.destination;
     selectedDepartureDate = data.selectedDepartureDate;
     selectedReturnDate = data.selectedReturnDate;
+    travelClass = data.travelClass;
     createFlightCalendar(data.flights);
   }
 
@@ -111,7 +113,8 @@
       datepairs: datepairsFiltered,
       origin: origin,
       destination: destination,
-      adults: adults
+      adults: adults,
+      travelClass: travelClass 
     }
     const options = {
       method: 'POST',

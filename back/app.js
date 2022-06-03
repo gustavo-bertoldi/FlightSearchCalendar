@@ -8,22 +8,27 @@ require('dotenv/config');
 
 //Load server parameters
 const PORT = process.env.PORT || 3000;
-if (!process.env.AMADEUS_CLIENT_ID) throw new Error('API_KEY environment variable could not be read');
-if (!process.env.AMADEUS_CLIENT_SECRET) throw new Error('API_SECRET environment variable could not be read');
+if (!process.env.AMADEUS_CLIENT_ID) throw new Error('AMADEUS_CLIENT_ID environment variable could not be read');
+if (!process.env.AMADEUS_CLIENT_SECRET) throw new Error('AMADEUS_CLIENT_SECRET environment variable could not be read');
+if (!process.env.CORS_ALLOW) throw new Error('CORS_ALLOW environment variable could not be read');
+const waitTime = process.env.ENV.endsWith('PROD') ? 25 : 100;
 
 //Configure express
 let app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+console.log(process.env.CORS_ALLOW)
 app.use(function (req, res, next) {
-  res.header("Access-Control-Allow-Origin", "http://localhost:5000");
+  res.header("Access-Control-Allow-Origin", `http://${process.env.CORS_ALLOW}`);
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   next();
 });
 
 
 //Configure Amadeus
-let amadeus = new Amadeus();
+let amadeus = new Amadeus({
+  hostname: 'production'
+});
 
 /**
  * @param {int} ms Time to wait in ms
@@ -53,7 +58,7 @@ function getCheapestDates(origin, destination, departureDate, returnDate, adults
     let responseCount = 0;
     let errorCount = 0;
 
-    await wait(100);
+    await wait(waitTime);
 
     for (let i = -3; i <= 3; i++) {
       let currentDepDate = format(addDays(depDate, i), 'yyyy-MM-dd');
@@ -86,7 +91,7 @@ function getCheapestDates(origin, destination, departureDate, returnDate, adults
         });
 
         //Test limits: 10 tx/s, 1tx/100ms
-        await wait(100);
+        await wait(waitTime);
       }
     }
 
@@ -107,9 +112,6 @@ function getCheapestDatepairs(origin, destination, adults, datepairs, travelClas
     let errorCount = 0;
     let expectedResponses = datepairs.length;
 
-    //Test limits: 10 tx/s, 1tx/100ms
-    await wait(100);
-
     datepairs.forEach(async (datepair) => {
       let departureDate = datepair.split('>')[0];
       let returnDate = datepair.split('>')[1];
@@ -127,7 +129,6 @@ function getCheapestDatepairs(origin, destination, adults, datepairs, travelClas
       }).catch((err) => {
         errorCount++;
         flights[datepair] = 'error';
-        if (err.response.statusCode != 429) reject(err);
       }).finally(() => {
         responseCount++;
         if (responseCount == expectedResponses) {
@@ -137,7 +138,7 @@ function getCheapestDatepairs(origin, destination, adults, datepairs, travelClas
       });
 
       //Test limits: 10 tx/s, 1tx/100ms
-      await wait(100);
+      await wait(waitTime);
     });
   });
 }
@@ -155,14 +156,14 @@ function getSearchSuggestions(keyword) {
 
 function getFlightOffers(origin, destination, departureDate, returnDate, adults, travelClass) {
   return new Promise(async (resolve, reject) => {
-    await wait(100);
+    await wait(waitTime);
     amadeus.shopping.flightOffersSearch.get({
       originLocationCode: origin,
       destinationLocationCode: destination,
       departureDate: departureDate,
       returnDate: returnDate,
       adults: adults,
-      max: 30,
+      max: 250,
       travelClass: travelClass
     }).then((response) => {
       resolve(response.data);
@@ -180,7 +181,7 @@ function airlineLookup(airlines) {
   }, '');
 
   return new Promise(async (resolve, reject) => {
-    await wait(100);
+    await wait(waitTime);
     amadeus.referenceData.airlines.get({
       airlineCodes: airlineCodes
     }).then((response) => {

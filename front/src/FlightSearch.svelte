@@ -196,7 +196,8 @@
           offers: offers,
           originCity: originCity,
           destinationCity: destinationCity,
-          datesChange: datesChange
+          datesChange: datesChange,
+          travelClass: formData.class
         };
         dispatch('offersReady', data);
         if (!datesChange) {
@@ -219,7 +220,8 @@
                     +  `&destination=${formData.destination}`
                     +  `&departureDate=${formData.departureDateFormatted}`
                     +  `&returnDate=${formData.returnDateFormatted}`
-                    +  `&adults=${formData.adults}`;
+                    +  `&adults=${formData.adults}`
+                    +  `&travelClass=${formData.class}`;
 
     const request = new Request(apiURL, { method: 'GET' });
     fetch(request)
@@ -233,7 +235,8 @@
           destination: formData.destination,
           adults: formData.adults,
           selectedDepartureDate: formData.selectedDepartureDate,
-          selectedReturnDate: formData.selectedReturnDate
+          selectedReturnDate: formData.selectedReturnDate,
+          travelClass: formData.class
         });
       })
       .catch(err => dispatch('error'));;
@@ -321,6 +324,8 @@
   export function newDateSearch(depDate, retDate) {
     document.getElementById('fs-flight-departure-date').value = depDate;
     document.getElementById('fs-flight-return-date').value = retDate;
+    flightDepartureDate = depDate;
+    flightReturnDate = retDate;
     flightSearch(true);
   }
 

@@ -56,12 +56,12 @@
 
 <main>
   <MaterialApp>
-    <Row class="d-flex justify-center pl-sm-3 pr-sm-3">
+    <Row class="d-flex justify-center pl-8 pr-8 pl-md-0 pr-md-0">
       <Col cols={5} sm={3} md={2} xl={1}><img width="100%" src="amadeus_logo.png" alt=""></Col>
       <Col cols={12} sm={12} md={8} xl={10}></Col>
       <Col cols={0} sm={0} md={2} xl={1}></Col>
     </Row>
-    <Row class="d-flex justify-center pl-sm-3 pr-sm-3">
+    <Row class="d-flex justify-center pl-8 pr-8 pl-md-0 pr-md-0">
       <Col cols={12} sm={12} md={8}>
         <FlightSearch 
           bind:this={flightSearch} 
@@ -73,7 +73,7 @@
         />
       </Col>
     </Row>
-    <Row class="d-flex justify-center pl-sm-3 pr-sm-3">
+    <Row class="d-flex justify-center pl-8 pr-8 pl-md-0 pr-md-0">
       <Col sm={12} md={10} lg={8}>
         <Calendar 
           bind:this={calendar} 
@@ -82,7 +82,7 @@
         />
       </Col>
     </Row>
-    <Row class="d-flex justify-center pl-sm-3 pr-sm-3">
+    <Row class="d-flex justify-center pl-8 pr-8 pl-md-0 pr-md-0">
       <Col sm={12} md={10} lg={7}>
         <FlightsView bind:this={flightsView}/>
       </Col>
