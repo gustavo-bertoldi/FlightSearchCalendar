@@ -1,8 +1,27 @@
 jobs:
   deploy:
-    name: Deploy to EC2
+    name: Deploy to AWS EC2
     runs-on: ubuntu-latest
 
 steps:
-  - name: Checkout the files
-    uses: actions/checkout@v2
+  - name: Checkout AWS branch
+    uses: actions/checkout@AWS
+  
+  - name: Setup Node.js
+    uses: actions/setup-node@v3
+    with:
+      node-version: 16
+      cache: 'npm'
+    
+  - name: Build backend
+    working-directory: ./back
+    run: | 
+      npm install
+      npm run serve 
+    
+  - name: Build frontend
+    working-directory: ./front
+    run: |
+      npm install
+      npm run build
+
