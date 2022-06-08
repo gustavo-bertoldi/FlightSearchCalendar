@@ -38,6 +38,5 @@ jobs:
           npm install
           npm run build
 
-      - name: Deploy to AWS
 
 
