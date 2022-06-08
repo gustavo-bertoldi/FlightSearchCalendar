@@ -17,7 +17,6 @@ const waitTime = process.env.ENV.endsWith('PROD') ? 25 : 100;
 let app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-console.log(process.env.CORS_ALLOW)
 app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", `http://${process.env.CORS_ALLOW}`);
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
@@ -194,8 +193,9 @@ function airlineLookup(airlines) {
 
 //=============== ROUTES ===============
 
-app.listen(PORT, () => {
-  console.log(`Listening on port ${PORT}...`)
+let server = app.listen(PORT, () => {
+  console.log(`Listening on port ${PORT}...`);
+  if (process.env.ENV === 'GITHUB') server.close();
 });
 
 app.get('/calendar-view', (req, res) => {
