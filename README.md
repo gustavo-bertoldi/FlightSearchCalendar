@@ -1,6 +1,8 @@
 # Flight Search Calendar App
 
-Easiy search for flights within a date interval to find the cheapest possible prices using Amadeus APIs.
+![Build](https://github.com/gustavo-bertoldi/FlightSearchCalendar/actions/workflows/aws_ci_cd.yml/badge.svg?branch=feature-1)
+
+Easily search for flights within a date interval to find the cheapest possible prices using Amadeus APIs.
 
 ## Run with Docker
 Set up your Amadeus credentials in ```./back/Dockerfile``` 

@@ -6,7 +6,7 @@ on:
         
 jobs:
   build:
-    name: Deploy to AWS EC2
+    name: Build and deploy to AWS
     runs-on: ubuntu-latest
 
     steps:
@@ -37,4 +37,7 @@ jobs:
         run: |
           npm install
           npm run build
+
+      - name: Deploy to AWS
+
 
