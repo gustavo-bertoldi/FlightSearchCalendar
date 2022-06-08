@@ -25,6 +25,8 @@ jobs:
         env:
           AMADEUS_CLIENT_ID: ${{ secrets.AMADEUS_CLIENT_ID }}
           AMADEUS_CLIENT_SECRET: ${{ secrets.AMADEUS_CLIENT_SECRET }}
+          PORT: 3000
+          CORS_ALLOW: localhost:5000
         run: | 
           npm install
           npm run serve 
