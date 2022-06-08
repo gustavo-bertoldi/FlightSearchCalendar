@@ -5,14 +5,16 @@ on:
         - AWS
         
 jobs:
-  deploy:
+  build:
     name: Deploy to AWS EC2
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout AWS branch
-        uses: actions/checkout@AWS
-  
+        uses: actions/checkout@v3
+        with:
+          ref: AWS
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
