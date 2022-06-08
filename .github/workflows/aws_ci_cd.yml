@@ -27,6 +27,7 @@ jobs:
           AMADEUS_CLIENT_SECRET: ${{ secrets.AMADEUS_CLIENT_SECRET }}
           PORT: 3000
           CORS_ALLOW: localhost:5000
+          ENV: GITHUB
         run: | 
           npm install
           npm run serve 
