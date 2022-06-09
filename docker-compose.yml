@@ -1,4 +1,4 @@
-version: "3.9"
+version: "1.22"
 services:
   front:
     build: ./front
@@ -11,3 +11,9 @@ services:
     container_name: backend
     ports:
       - "3000:3000"
+    environment:
+      - AMADEUS_CLIENT_ID=${AMADEUS_CLIENT_ID}
+      - AMADEUS_CLIENT_SECRET=${AMADEUS_CLIENT_SECRET}
+      - PORT=3000
+      - CORS_ALLOW="localhost:5000"
+      - ENV=AWS_PROD

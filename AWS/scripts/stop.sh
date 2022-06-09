@@ -1,2 +1,1 @@
-killall node
-
+docker kill $(docker ps -q)
