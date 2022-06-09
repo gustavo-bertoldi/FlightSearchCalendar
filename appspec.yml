@@ -12,11 +12,11 @@ permissions:
 
 hooks:
   ApplicationStop:
-    - location: AWS/scripts/stop.sh
+    - location: AWS/scripts/stop
       timeout: 60
       runas: ec2-user
 
   ApplicationStart:
-    - location: AWS/scripts/start.sh
+    - location: AWS/scripts/start
       timeout: 1200
       runas: ec2-user
