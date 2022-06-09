@@ -6,7 +6,7 @@
   import { MaterialApp, Row, Col, Snackbar } from 'svelte-materialify';
 
   //One of the ways in Svelte to set a shared variable between the components. Backend URL.
-  setContext('API_URL', 'http://54.246.222.69:3000')
+  setContext('API_URL', 'http://ec2-54-246-222-69.eu-west-1.compute.amazonaws.com:3000')
   
 
   let calendar;
