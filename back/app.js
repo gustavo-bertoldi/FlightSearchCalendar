@@ -25,6 +25,7 @@ app.use(function (req, res, next) {
 
 
 //Configure Amadeus
+const amadeusHostname = process.env.ENV.endsWith('PROD') ? 'production' : 'test';
 let amadeus = new Amadeus({
   hostname: 'production'
 });
