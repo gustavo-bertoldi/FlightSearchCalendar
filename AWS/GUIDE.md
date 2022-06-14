@@ -11,7 +11,7 @@
 ## Prerequisites
 - An account on AWS, all the features used are available in the free tier.
 - A Github account and a repository containing the application you want to deploy. In this tutorial we will use **docker-compose** to launch our application, so you need to prepare your application for **Docker**.
-- Optionally you can use the same application we use in the guide, which is available [here](https://github.com/gustavo-bertoldi/FlightSearchCalendar).
+- Optionally you can use the same application we use in the guide, clone the AWS branch [here](https://github.com/gustavo-bertoldi/FlightSearchCalendar/tree/AWS).
 
 # Configuring AWS
 
