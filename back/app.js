@@ -17,7 +17,6 @@ const waitTime = process.env.ENV.endsWith('PROD') ? 25 : 100;
 let app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-console.log(process.env.CORS_ALLOW)
 app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", `http://${process.env.CORS_ALLOW}`);
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
@@ -41,8 +40,44 @@ function wait(ms) {
   });
 }
 
-//Server variables
-let lastSearchRequest = new Date();
+//Helper functions
+/**
+ * Helper function to convert a string in the format PTxxHyyM to xx h yy m
+ * Takes into account special cases when hours or minutes are equal to zero
+ * @param str Input value
+ * @return Formatted string
+ */
+function formatDuration(str) {
+  let hasHours = str.includes('H');
+  let hasMinutes = str.includes('M')
+  let durationHours = hasHours ? str.split('PT')[1].split('H')?.[0] : '0';
+  let durationMinutes;
+  let formatted;
+
+  if (hasHours && hasMinutes) {
+    durationMinutes = str.split('PT')[1].split('H')[1].split('M')[0];
+    formatted = `${durationHours} h ${durationMinutes} min`;
+  } else if (hasMinutes) {
+    durationMinutes = str.split('PT')[1].split('M')[0];
+    formatted = `${durationMinutes} min`;
+  } else {
+    formatted = `${durationHours} h`;
+  }
+
+  return formatted;
+}
+
+/**
+ * Helper function to convert a uppercase string to first-letter uppercase
+ * Ex.: NEW YORK CITY -> New York City
+ * @param {string} str Input uppercase string
+ * @returns {string} Output
+ */
+function formatString(str) {
+  str = str.split(' ');
+  str = str.map(word => word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
+  return str.join(' ');
+}
 
 /**
  * Search flights 3 days before and after the given departure and return dates
@@ -166,8 +201,95 @@ function getFlightOffers(origin, destination, departureDate, returnDate, adults,
       adults: adults,
       max: 250,
       travelClass: travelClass
-    }).then((response) => {
-      resolve(response.data);
+    }).then(async (response) => {
+      const currencyFormatter = Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: response.data[0].price.currency
+      });
+      
+      let citiesCodes = {};
+      let carrierCodes = {};
+      response.data.forEach(offer => {
+        offer.itineraries.forEach(itinerary => {
+          itinerary.segments.forEach(segment => {
+            /*TODO - For city names
+            [segment.departure.iataCode, segment.arrival.iataCode].forEach(code => {
+              if (!citiesCodes[code]) citiesCodes[code] = " ";
+            });
+            */
+            let carrierCode = segment.operating?.carrierCode || segment.carrierCode;
+            if (!carrierCodes[carrierCode]) carrierCodes[carrierCode] = " ";
+          });
+        });
+      });
+
+      let carriers = await amadeus.referenceData.airlines.get({
+        airlineCodes: Object.keys(carrierCodes).join(',')
+      });
+      carriers.data.forEach(carrier => {
+        carrierCodes[carrier.iataCode] = formatString(carrier.businessName);
+      });
+
+      let offers = response.data.map(offer => {
+        let offerData = {};
+        offerData.priceFormatted = currencyFormatter.format(offer.price.total);
+
+        let nbSegments = offer.itineraries[0].segments.length;
+        offerData.stops = `${nbSegments == 1 ? 'Nonstop' : (nbSegments - 1) + ' stop' + (nbSegments >= 3 ? 's' : '')}`;
+  
+        let departureDate = new Date(offer.itineraries[0].segments[0].departure.at);
+        let arrivalDate = new Date(offer.itineraries[0].segments[nbSegments - 1].arrival.at)
+        offerData.departureTime = format(departureDate, 'HH:mm');
+        offerData.arrivalTime = format(arrivalDate, 'HH:mm');
+  
+        offerData.totalDuration = formatDuration(offer.itineraries[0].duration);
+  
+        offerData.departureAirport = offer.itineraries[0].segments[0].departure.iataCode;
+        offerData.arrivalAirport = offer.itineraries[0].segments[nbSegments - 1].arrival.iataCode;
+        
+        //Join location API
+        offerData.originCity = origin;
+        offerData.destinationCity = destination;
+
+        offer.itineraries.forEach((itinerary, i) => {
+          let itineraryData = {};
+          let nbSegments = itinerary.segments.length;
+          itineraryData.duration = formatDuration(itinerary.duration);
+          itineraryData.stops = `${nbSegments == 1 ? 'Nonstop' : (nbSegments - 1) + ' stop' + (nbSegments >= 3 ? 's' : '')}`;
+
+          itineraryData.segments = itinerary.segments.map((segment, i) => {
+            let segmentData = {};
+            let segmentArrivalTime = new Date(segment.arrival.at);
+            let carrierCode = segment.operating?.carrierCode || segment.carrierCode;
+            segmentData.departureDate = format(new Date(segment.departure.at), 'EEEE, d MMMM');
+            segmentData.arrivalDate = format(new Date(segment.arrival.at), 'EEEE, d MMMM');
+            segmentData.departureTime = format(new Date(segment.departure.at), 'HH:mm');
+            segmentData.arrivalTime = format(segmentArrivalTime, 'HH:mm');
+            segmentData.duration = formatDuration(segment.duration);
+            segmentData.origin = segment.departure.iataCode;
+            segmentData.destination = segment.arrival.iataCode;
+            segmentData.carrierCode = carrierCode;
+            segmentData.carrierName = carrierCodes[carrierCode];
+            segmentData.flightNumber = segment.number;
+            segmentData.aircraft = segment.aircraft.code;
+            segmentData.class = formatString(offer.travelerPricings[0].fareDetailsBySegment.find(fd => fd.segmentId === segment.id).cabin.replace('_', ' ')) || '';
+
+            if (i < nbSegments - 1) {
+              let nextDeparture = new Date(itinerary.segments[i + 1].departure.at);
+              let stopTime = nextDeparture - segmentArrivalTime;
+              let minutes = (stopTime / (60 * 1000)) % 60;
+              let hours = Math.floor(stopTime / (60 * 60 * 1000));
+              segmentData.stopDuration = `${hours} h ${minutes} min`;
+            }
+            return segmentData;
+          });
+
+         if (i === 0) offerData.outbound = itineraryData;
+         else offerData.inbound = itineraryData;
+        });
+        return offerData;
+      });
+      resolve(offers);
     }).catch((err) => {
       reject(err);
     });
