@@ -56,7 +56,6 @@
 
 <main>
   <MaterialApp>
-    <h1>test deploy</h1>
     <Row class="d-flex justify-center pl-8 pr-8 pl-md-0 pr-md-0">
       <Col cols={5} sm={3} md={2} xl={1}><img width="100%" src="amadeus_logo.png" alt=""></Col>
       <Col cols={12} sm={12} md={8} xl={10}></Col>
