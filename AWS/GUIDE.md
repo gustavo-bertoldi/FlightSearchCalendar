@@ -11,7 +11,7 @@
 ## Prerequisites
 - An account on AWS, all the features used are available in the free tier.
 - A Github account and a repository containing the application you want to deploy. In this tutorial we will use **docker-compose** to launch our application, so you need to prepare your application for **Docker**.
-- Optionally you can use the same application we use in the guide, clone the AWS branch [here](https://github.com/gustavo-bertoldi/FlightSearchCalendar/tree/AWS).
+- Optionally you can use the same application we use in the guide, clone or fork the AWS branch of the repository [here](https://github.com/gustavo-bertoldi/FlightSearchCalendar/tree/AWS).
 
 # Configuring AWS
 
@@ -338,4 +338,4 @@ The first step is to configure the AWS credentials, to do so we are going to use
 Next to execute the deployment, we are going to run a command passing our deployment parameters as well as our repository's name and the hash of the commit we want to use. The `application-name` and `deployment-group-name` are respectively the name of the application and the deployment group we created on **CodeDeploy**. By using the variables `github.repository`  and `github.sha` we have the current repository and the hash of the last commit. 
 
 #
-Now that everything is set, once you push to your repository, the workflow will be triggered and it will be deployed to your EC2 instance on AWS.
+Now that everything is set, once you push to your repository, the workflow will be triggered and it will be deployed to your EC2 instance on AWS. To access your app's default ports (HTTP, HTTPS), use the public address of your EC2 instance, which can be easily found in the instance's summary.
