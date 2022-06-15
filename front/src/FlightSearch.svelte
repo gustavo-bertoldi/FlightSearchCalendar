@@ -194,10 +194,7 @@
         stopLoading();
         let data = {
           offers: offers,
-          originCity: originCity,
-          destinationCity: destinationCity,
-          datesChange: datesChange,
-          travelClass: formData.class
+          datesChange: datesChange
         };
         dispatch('offersReady', data);
         if (!datesChange) {

@@ -2,7 +2,7 @@
 <script>
   import { onMount, getContext, tick, createEventDispatcher } from 'svelte';
   import { format, addDays, isAfter, isBefore } from 'date-fns';
-  import { ProgressCircular, ProgressLinear, Icon, Row, Col, Button, Overlay } from 'svelte-materialify';
+  import { ProgressCircular, Icon, Button } from 'svelte-materialify';
   import { mdiArrowLeftBold, mdiArrowRightBold, mdiArrowUpBold, mdiArrowDownBold, mdiCalendar, mdiClose } from '@mdi/js'
 
   const API_URL = getContext('API_URL');
@@ -194,7 +194,7 @@
   /**
    * Helper function to show the calendar, its close button and hide the view calendar button
    */
-  function showCalendar() {
+  export function showCalendar() {
     document.querySelector('div.main-container').style.display = 'block';
     document.getElementById('calendar-view-btn').style.display = 'none';
     document.getElementById('calendar-close-btn').style.display = 'block'
@@ -203,7 +203,7 @@
   /**
    * Helper function to hide the calendar and its close button, shows the view calendar button
    */
-  function hideCalendar() {
+  export function hideCalendar() {
     document.querySelector('div.main-container').style.display = 'none';
     document.getElementById('calendar-view-btn').style.display = 'block';
     document.getElementById('calendar-close-btn').style.display = 'none'
@@ -219,7 +219,7 @@
   /**
    * Helper function to hide calendar view button
    */
-  function hideCalendarButton() {
+  export function hideCalendarButton() {
     document.getElementById('calendar-view-btn').style.display = 'none';
   }
 

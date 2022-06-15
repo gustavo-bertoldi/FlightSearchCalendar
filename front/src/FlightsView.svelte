@@ -1,19 +1,11 @@
 <script>
-  import { format } from "date-fns";
   import { mdiAirplaneTakeoff, mdiAirplaneLanding, mdiClockTimeFourOutline } from "@mdi/js";
-  import { MaterialApp, Row, Col, ExpansionPanel, ExpansionPanels, Icon, Button } from "svelte-materialify";
-  import { getContext } from "svelte";
+  import { createEventDispatcher } from "svelte";
+  import { MaterialApp, Row, Col, ExpansionPanel, ExpansionPanels, Icon, Button, Divider } from "svelte-materialify";
 
-  const API_URL = getContext('API_URL');
   let offers = [];
-  let airlineMap = {};
-
-  /**
-   * Helper function to delete previous flight data
-   */
-  export function resetFlights() {
-    offers = [];
-  }
+  let chosenOffer;
+  const dispatch = createEventDispatcher();
 
   /**
    * Listener for the response of a flights offer search from the FlightSearch component
@@ -30,141 +22,53 @@
    * @property {string?} data.selectedReturnDate Return date entered in the form in the format 'yyyy-MM-dd'. Only present when search is for calendar filling.
    */
   export async function flightSearchListener(data) {
-    const currencyFormatter = Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: data.offers[0].price.currency
-    });
+    offers = data;
+  }
 
-    buildAirlineMap(data.offers);
+  function selectFlight(offer) {
+    document.querySelector('div.outbound-flights').style.display = 'none';
+    document.querySelector('div.inbound-flights').style.display = 'block';
+    chosenOffer = offer;
+    dispatch("outboundSelected");
+  }
 
-    offers = data.offers.map(offer => {
-      offer.price.total = currencyFormatter.format(offer.price.total);
+  export function changeDepart() {
+    document.querySelector('div.outbound-flights').style.display = 'flex';
+    document.querySelector('div.inbound-flights').style.display = 'none';
+    chosenOffer = null;
+    dispatch('changeDepart');
+  }
 
-      let nbSegments = offer.itineraries[0].segments.length;
-      offer.stops = `${nbSegments == 1 ? 'Nonstop' : (nbSegments - 1) + ' stop' + (nbSegments >= 3 ? 's' : '')}`;
-
-      let departureDate = new Date(offer.itineraries[0].segments[0].departure.at);
-      let arrivalDate = new Date(offer.itineraries[0].segments[nbSegments - 1].arrival.at)
-      offer.departureTime = format(departureDate, 'HH:mm');
-      offer.arrivalTime = format(arrivalDate, 'HH:mm');
-
-
-      offer.totalDuration = formatDuration(offer.itineraries[0].duration);
-
-      offer.departureAirport = offer.itineraries[0].segments[0].departure.iataCode;
-      offer.arrivalAirport = offer.itineraries[0].segments[nbSegments - 1].arrival.iataCode;
-
-      offer.originCity = data.originCity;
-      offer.destinationCity = data.destinationCity;
-
-      offer.itineraries[0].segments = offer.itineraries[0].segments.map((segment, i) => {
-        segment.departureTime = format(new Date(segment.departure.at), 'HH:mm');
-        let arrivalTime = new Date(segment.arrival.at);
-        segment.arrivalTime = format(arrivalTime, 'HH:mm');
-
-        segment.duration = formatDuration(segment.duration);
-        segment.segmentClass = formatString(offer.travelerPricings[0].fareDetailsBySegment.find(fd => fd.segmentId === segment.id).cabin.replace('_', ' ')) || '';
-
-        if (i < nbSegments - 1) {
-          let nextDeparture = new Date(offer.itineraries[0].segments[i + 1].departure.at);
-          let stopTime = nextDeparture - arrivalTime;
-          let minutes = (stopTime/(60*1000))%60;
-          let hours = Math.floor(stopTime/(60*60*1000));
-          segment.stopDuration = `${hours} h ${minutes} min`;
-        }
-        return segment;
-      });
-      return offer;
-    });
+  function selectInbound(selectedInbound) {
+    document.querySelector('div.outbound-flights').style.display = 'none';
+    document.querySelector('div.inbound-flights').style.display = 'none';
+    let trip = {
+      validatingAirline: chosenOffer.validatingAirline,
+      outbound: chosenOffer.outbound,
+      inbounds: [selectedInbound]
+    };
+    dispatch('offerChosen', trip);
   }
 
   /**
-   * Helper function to convert a string in the format PTxxHyyM to xx h yy m
-   * Takes into account special cases when hours or minutes are equal to zero
-   * @param str Input value
-   * @return Formatted string
-   */
-  function formatDuration(str) {
-    let hasHours = str.includes('H');
-    let hasMinutes = str.includes('M')
-    let durationHours = hasHours ? str.split('PT')[1].split('H')?.[0] : '0';
-    let durationMinutes;
-    let formatted;
-
-    if (hasHours && hasMinutes) {
-      durationMinutes = str.split('PT')[1].split('H')[1].split('M')[0];
-      formatted = `${durationHours} h ${durationMinutes} min`;
-    } else if (hasMinutes) {
-      durationMinutes = str.split('PT')[1].split('M')[0];
-      formatted = `${durationMinutes} min`;
-    } else {
-      formatted = `${durationHours} h`;
-    }
-
-    return formatted;
-  }
-
-  /**
-   * Helper function to convert a uppercase string to first-letter uppercase
-   * Ex.: NEW YORK CITY -> New York City
-   * @param {string} str Input uppercase string
-   * @returns {string} Output
-   */
-  function formatString(str) {
-    str = str.split(' ');
-    str = str.map(word => word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
-    return str.join(' ');
-  }
-
-  /**
-   * Helper function to build a map-like object from airline code to its business name
-   * Ex.: DL -> DELTA AIRLINES
-   * @param {object} offers Offers received from backend, from which the airline codes are going to be extracted
-   * @returns {Promise} Resolves when response is received from backed and map is ready
-   */
-  function buildAirlineMap(offers) {
-    return new Promise((resolve, reject) => {
-      let airlines = [];
-      offers.forEach(offer => {
-        offer.itineraries[0].segments.forEach(segment => {
-          let alCode = segment?.operating?.carrierCode || '';
-          if (!airlines.includes(alCode)) airlines.push(alCode);
-        });
-      });
-
-      const url = `${API_URL}/airline-lookup`;
-      const options = {
-        method: 'POST',
-        body: JSON.stringify(airlines),
-        headers: { "Content-Type": "application/json; charset=UTF-8" }
-      }
-      const request = new Request(url, options);
-
-      fetch(request)
-        .then(response => response.json())
-        .then(airlines => {
-          airlines.forEach(airline => {
-            if (!airlineMap[airline.iataCode]) {
-              airline.businessName = formatString(airline.businessName);
-              airlineMap[airline.iataCode] = airline;
-            }
-          });
-          resolve();
-        });
-    });
+  * Helper function to delete previous flight data
+  */
+  export function resetFlights() {
+    offers = [];
+    changeDepart();
   }
 
 </script>
 
 <MaterialApp>
-  <ExpansionPanels multiple>
+  <ExpansionPanels class="outbound-flights">
     {#each offers as offer}
       <ExpansionPanel>
         <span style="width: 100%" slot="header">
           <Row class="d-flex align-center">
             <Col cols={2} lg={1}>
               <img 
-                src={`https://s1.apideeplink.com/images/airlines/${offer.validatingAirlineCodes[0]}.png`} 
+                src={`https://s1.apideeplink.com/images/airlines/${offer.validatingAirline}.png`} 
                 on:error={function errHandler() {this.onerror=null; this.src='airplane-tail.png'}} 
                 alt="Carrier logo" 
                 style="width: inherit;"
@@ -173,35 +77,33 @@
             <Col cols={3} lg={4} class="d-flex flex-column align-center">
               <span class="flight-upper-row flight-row">
                 <Icon class="flight-row-icon" size="25px" path={mdiAirplaneTakeoff}/>
-                {offer.departureAirport} &bull; {offer.departureTime}
+                {offer.outbound.departureAirport} &bull; {offer.outbound.departureTime}
               </span>
               <span class="flight-bottom-row flight-row">
                 <Icon class="flight-row-icon" size="25px" path={mdiAirplaneLanding}/>
-                {offer.arrivalAirport} &bull; {offer.arrivalTime}
+                {offer.outbound.arrivalAirport} &bull; {offer.outbound.arrivalTime}
               </span>
             </Col>
             <Col cols={4} lg={4} class="d-flex flex-column align-center">
               <span class="flight-upper-row flight-row">
                 <Icon class="flight-row-icon" size="25px" path={mdiClockTimeFourOutline}/>
-                {offer.totalDuration}
+                {offer.outbound.duration}
               </span>
-              <span class="flight-bottom-row flight-stops-row">{offer.stops}</span>
+              <span class="flight-bottom-row flight-stops-row">{offer.outbound.stops}</span>
             </Col>
             <Col cols={2} lg={2} class="d-flex justify-center align-center">
-              <span class="flight-price-row flight-row">{offer.price.total}</span>
+              <span class="flight-price-row flight-row">{offer.priceFrom}</span>
             </Col>
           </Row>
         </span>
         <Row class="d-flex align-center justify-center">
-          {@const flightColSize = offer.itineraries[0].segments.length <= 2 ? 4 : 2}
-          {#each offer.itineraries[0].segments as segment, i }
-            {@const segCarrCode = segment?.operating?.carrierCode || segment?.carrierCode}
-            {@const carrBusinessName = airlineMap[segCarrCode]?.businessName || ''}
+          {@const flightColSize = offer.outbound.segments.length <= 2 ? 4 : 2}
+          {#each offer.outbound.segments as segment, i }
             <Col cols={12} lg={flightColSize} class="flight-details d-flex justify-center">
               <div class="d-flex flex-column">
                 <span class="flight-row justify-center">
                   <Icon class="flight-row-icon" size="25px" path={mdiAirplaneTakeoff}/>
-                  {segment.departure.iataCode}  &bull; {segment.departureTime}
+                  {segment.origin}  &bull; {segment.departureTime}
                 </span>
                 <div class="d-flex align-center justify-center" style="min-width: 270px;">
                   <div class="vertical-line"></div>
@@ -209,27 +111,175 @@
                 </div>
                 <span class="flight-row justify-center">
                   <Icon class="flight-row-icon" size="25px" path={mdiAirplaneLanding}/>
-                  {segment.arrival.iataCode}  &bull; {segment.arrivalTime}
+                  {segment.destination}  &bull; {segment.arrivalTime}
                 </span>
                 <span class="flight-details justify-center" style="width: 100%">
-                  {segment.carrierCode} {segment.number} &bull; Operated by {carrBusinessName} &bull; {segment.segmentClass}
+                  {segment.carrierCode} {segment.flightNumber} &bull; Operated by {segment.carrierName} &bull; {segment.class}
                 </span>
               </div>
             </Col>
-            {#if i < offer.itineraries[0].segments.length - 1}
+            {#if i < offer.outbound.segments.length - 1}
             <Col cols={12} lg={2} class="d-flex flex-column justify-center flight-details mb-3">
-              <span style="text-align: center;">Stop in <b>{segment.arrival.iataCode}</b></span>
+              <span style="text-align: center;">Stop in <b>{segment.destination}</b></span>
               <span style="text-align: center;">{segment.stopDuration}</span>
             </Col>
             {/if}
           {/each}
           <Col cols={12} class="d-flex flex-column justify-center">
-            <Button class="select-return-btn" text>Select flight</Button>
+            <Button class="select-flight-btn" text on:click={() => selectFlight(offer)}>Select flight</Button>
           </Col>
         </Row>
       </ExpansionPanel>
     {/each}
   </ExpansionPanels>
+  <div class="inbound-flights">
+    {#if chosenOffer}
+    <Row>
+      <Col class="d-flex justify-space-between">
+        <span style="font-size: 18px;">Flight to <b>{chosenOffer.outbound.arrivalAirport}</b> on {chosenOffer.outbound.departureDate}</span>
+        <Button class="change-outbound-btn" text on:click={changeDepart}>Change depart</Button>
+      </Col>
+    </Row>
+    <ExpansionPanels>
+      <ExpansionPanel>
+        <span style="width: 100%" slot="header">
+          <Row class="d-flex align-center">
+            <Col cols={2} lg={1}>
+              <img 
+                src={`https://s1.apideeplink.com/images/airlines/${chosenOffer.validatingAirline}.png`} 
+                on:error={function errHandler() {this.onerror=null; this.src='airplane-tail.png'}} 
+                alt="Carrier logo" 
+                style="width: inherit;"
+              />
+            </Col>
+            <Col cols={3} lg={4} class="d-flex flex-column align-center">
+              <span class="flight-upper-row flight-row">
+                <Icon class="flight-row-icon" size="25px" path={mdiAirplaneTakeoff}/>
+                {chosenOffer.outbound.departureAirport} &bull; {chosenOffer.outbound.departureTime}
+              </span>
+              <span class="flight-bottom-row flight-row">
+                <Icon class="flight-row-icon" size="25px" path={mdiAirplaneLanding}/>
+                {chosenOffer.outbound.arrivalAirport} &bull; {chosenOffer.outbound.arrivalTime}
+              </span>
+            </Col>
+            <Col cols={4} lg={4} class="d-flex flex-column align-center">
+              <span class="flight-upper-row flight-row">
+                <Icon class="flight-row-icon" size="25px" path={mdiClockTimeFourOutline}/>
+                {chosenOffer.outbound.duration}
+              </span>
+              <span class="flight-bottom-row flight-stops-row">{chosenOffer.outbound.stops}</span>
+            </Col>
+          </Row>
+        </span>
+        <Row class="d-flex align-center justify-center">
+          {@const flightColSize = chosenOffer.outbound.segments.length <= 2 ? 4 : 2}
+          {#each chosenOffer.outbound.segments as segment, i }
+            <Col cols={12} lg={flightColSize} class="flight-details d-flex justify-center">
+              <div class="d-flex flex-column">
+                <span class="flight-row justify-center">
+                  <Icon class="flight-row-icon" size="25px" path={mdiAirplaneTakeoff}/>
+                  {segment.origin}  &bull; {segment.departureTime}
+                </span>
+                <div class="d-flex align-center justify-center" style="min-width: 270px;">
+                  <div class="vertical-line"></div>
+                  <span class="flight-segment-duration">{segment.duration}</span>
+                </div>
+                <span class="flight-row justify-center">
+                  <Icon class="flight-row-icon" size="25px" path={mdiAirplaneLanding}/>
+                  {segment.destination}  &bull; {segment.arrivalTime}
+                </span>
+                <span class="flight-details justify-center" style="width: 100%">
+                  {segment.carrierCode} {segment.flightNumber} &bull; Operated by {segment.carrierName} &bull; {segment.class}
+                </span>
+              </div>
+            </Col>
+            {#if i < chosenOffer.outbound.segments.length - 1}
+            <Col cols={12} lg={2} class="d-flex flex-column justify-center flight-details mb-3">
+              <span style="text-align: center;">Stop in <b>{segment.destination}</b></span>
+              <span style="text-align: center;">{segment.stopDuration}</span>
+            </Col>
+            {/if}
+          {/each}
+        </Row>
+      </ExpansionPanel>
+    </ExpansionPanels>
+    <div class="mt-4 mb-4">
+      <Divider class="mb-4"/>
+      <span style="font-size: 18px;">Choose the returning flight:</span>
+    </div>
+    <ExpansionPanels>
+      {#each chosenOffer.inbounds as inbound}
+      <ExpansionPanel>
+        <span style="width: 100%" slot="header">
+          <Row class="d-flex align-center">
+            <Col cols={2} lg={1}>
+              <img 
+                src={`https://s1.apideeplink.com/images/airlines/${chosenOffer.validatingAirline}.png`} 
+                on:error={function errHandler() {this.onerror=null; this.src='airplane-tail.png'}} 
+                alt="Carrier logo" 
+                style="width: inherit;"
+              />
+            </Col>
+            <Col cols={3} lg={4} class="d-flex flex-column align-center">
+              <span class="flight-upper-row flight-row">
+                <Icon class="flight-row-icon" size="25px" path={mdiAirplaneTakeoff}/>
+                {inbound.departureAirport} &bull; {inbound.departureTime}
+              </span>
+              <span class="flight-bottom-row flight-row">
+                <Icon class="flight-row-icon" size="25px" path={mdiAirplaneLanding}/>
+                {inbound.arrivalAirport} &bull; {inbound.arrivalTime}
+              </span>
+            </Col>
+            <Col cols={4} lg={4} class="d-flex flex-column align-center">
+              <span class="flight-upper-row flight-row">
+                <Icon class="flight-row-icon" size="25px" path={mdiClockTimeFourOutline}/>
+                {inbound.duration}
+              </span>
+              <span class="flight-bottom-row flight-stops-row">{inbound.stops}</span>
+            </Col>
+            <Col cols={2} lg={2} class="d-flex justify-center align-center">
+              <span class="flight-price-row flight-row">{inbound.priceFormatted}</span>
+            </Col>
+          </Row>
+        </span>
+        <Row class="d-flex align-center justify-center">
+          {@const flightColSize = inbound.segments.length <= 2 ? 4 : 2}
+          {#each inbound.segments as segment, i }
+            <Col cols={12} lg={flightColSize} class="flight-details d-flex justify-center">
+              <div class="d-flex flex-column">
+                <span class="flight-row justify-center">
+                  <Icon class="flight-row-icon" size="25px" path={mdiAirplaneTakeoff}/>
+                  {segment.origin}  &bull; {segment.departureTime}
+                </span>
+                <div class="d-flex align-center justify-center" style="min-width: 270px;">
+                  <div class="vertical-line"></div>
+                  <span class="flight-segment-duration">{segment.duration}</span>
+                </div>
+                <span class="flight-row justify-center">
+                  <Icon class="flight-row-icon" size="25px" path={mdiAirplaneLanding}/>
+                  {segment.destination}  &bull; {segment.arrivalTime}
+                </span>
+                <span class="flight-details justify-center" style="width: 100%">
+                  {segment.carrierCode} {segment.flightNumber} &bull; Operated by {segment.carrierName} &bull; {segment.class}
+                </span>
+              </div>
+            </Col>
+            {#if i < inbound.segments.length - 1}
+            <Col cols={12} lg={2} class="d-flex flex-column justify-center flight-details mb-3">
+              <span style="text-align: center;">Stop in <b>{segment.destination}</b></span>
+              <span style="text-align: center;">{segment.stopDuration}</span>
+            </Col>
+            {/if}
+          {/each}
+          <Col cols={12} class="d-flex flex-column justify-center">
+            <Button class="select-return-btn" text on:click={() => selectInbound(inbound)}>Select flight</Button>
+          </Col>
+        </Row>
+      </ExpansionPanel>
+      {/each}
+    </ExpansionPanels>
+    {/if}
+  </div>
 </MaterialApp>
 
 <style>
@@ -273,8 +323,15 @@
     text-align: center;
   }
 
-  :global(button.select-return-btn) {
+  :global(button.select-flight-btn),
+  :global(button.change-outbound-btn),
+  :global(button.select-return-btn),
+  :global(button.change-flights-btn) {
     color: var(--amadeus-blue);
+  }
+
+  div.inbound-flights {
+    display: none;
   }
 
 
