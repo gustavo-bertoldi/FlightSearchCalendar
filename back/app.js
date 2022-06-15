@@ -4,6 +4,7 @@ const addDays = require('date-fns/addDays')
 const bodyParser = require('body-parser');
 const url = require('url');
 const Amadeus = require('amadeus');
+const { isThisQuarter } = require('date-fns');
 require('dotenv/config');
 
 //Load server parameters
@@ -77,6 +78,13 @@ function formatString(str) {
   str = str.split(' ');
   str = str.map(word => word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
   return str.join(' ');
+}
+
+function sameOutbound(it1, it2) {
+  if (it1.segments.length != it2.segments.length) return false;
+  let it1Flights = it1.segments.map(seg => seg.carrierCode + seg.carrierName);
+  let it2Flights = it2.segments.map(seg => seg.carrierCode + seg.carrierName);
+  return it1Flights.every(flight => it2Flights.includes(flight));
 }
 
 /**
@@ -230,9 +238,10 @@ function getFlightOffers(origin, destination, departureDate, returnDate, adults,
         carrierCodes[carrier.iataCode] = formatString(carrier.businessName);
       });
 
-      let offers = response.data.map(offer => {
+      let offers = [];
+      response.data.forEach(offer => {
         let offerData = {};
-        offerData.priceFormatted = currencyFormatter.format(offer.price.total);
+        offerData.priceFrom = currencyFormatter.format(offer.price.total);
         offerData.validatingAirline = offer.validatingAirlineCodes[0];
 
         offer.itineraries.forEach((itinerary, i) => {
@@ -279,11 +288,23 @@ function getFlightOffers(origin, destination, departureDate, returnDate, adults,
             return segmentData;
           });
 
-         if (i === 0) offerData.outbound = itineraryData;
-         else offerData.inbound = itineraryData;
+          if (i === 0) offerData.outbound = itineraryData;
+          else {
+            offerData.inbounds = [itineraryData];
+            itineraryData.priceFormatted = offerData.priceFrom;
+            itineraryData.offerId = offer.id;
+            offers.forEach((offer) => {
+              if (sameOutbound(offer.outbound, offerData.outbound)) {
+                  offer.inbounds.push(itineraryData);
+                  offerData.added = true;
+              }
+            });
+          }
         });
-        return offerData;
+        if (!offerData.added) offers.push(offerData);
       });
+
+      
       resolve(offers);
     }).catch((err) => {
       reject(err);

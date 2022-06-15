@@ -4,6 +4,7 @@
   import FlightSearch from "./FlightSearch.svelte";
   import FlightsView from "./FlightsView.svelte";
   import { MaterialApp, Row, Col, Snackbar } from 'svelte-materialify';
+import TripView from "./TripView.svelte";
 
   //One of the ways in Svelte to set a shared variable between the components. Backend URL.
   setContext('API_URL', 'http://localhost:3000')
@@ -12,6 +13,7 @@
   let calendar;
   let flightsView;
   let flightSearch;
+  let tripView;
   let errorBar = false;
 
   /**
@@ -35,6 +37,7 @@
   function searchClicked() {
     flightsView.resetFlights();
     calendar.resetCalendar();
+    tripView.resetChosenOffer();
   }
 
   /**
@@ -45,11 +48,31 @@
     flightsView.resetFlights();
   }
 
+  function showTripView(trip) {
+    tripView.setChosenOffer(trip);
+    calendar.hideCalendarButton();
+  }
+
   /**
    * Error from the backend listener
    */
   function showError() {
     errorBar = true;
+  }
+
+  function changeFlights() {
+    flightsView.changeDepart();
+    calendar.showCalendarButton();
+    tripView.resetChosenOffer();
+  }
+
+  function outboundSelected() {
+    calendar.hideCalendar();
+    calendar.hideCalendarButton();
+  }
+
+  function changeDepart() {
+    calendar.showCalendarButton();
   }
 
 </script>
@@ -84,7 +107,19 @@
     </Row>
     <Row class="d-flex justify-center pl-8 pr-8 pl-md-0 pr-md-0">
       <Col sm={12} md={10} lg={7}>
-        <FlightsView bind:this={flightsView}/>
+        <FlightsView 
+          bind:this={flightsView}
+          on:offerChosen={event => showTripView(event.detail)}
+          on:outboundSelected={outboundSelected}
+          on:changeDepart={changeDepart}
+        />
+      </Col>
+    </Row>
+    <Row class="d-flex justify-center pl-8 pr-8 pl-md-0 pr-md-0">
+      <Col sm={12} md={10} lg={7}>
+        <TripView bind:this={tripView}
+          on:changeFlights={event => changeFlights()}
+        />
       </Col>
     </Row>
     <Snackbar class="flex-column" bind:active={errorBar} top center timeout={5000}>

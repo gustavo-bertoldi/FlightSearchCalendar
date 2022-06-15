@@ -1,16 +1,11 @@
 <script>
   import { mdiAirplaneTakeoff, mdiAirplaneLanding, mdiClockTimeFourOutline } from "@mdi/js";
-  import { MaterialApp, Row, Col, ExpansionPanel, ExpansionPanels, Icon, Button } from "svelte-materialify";
+  import { createEventDispatcher } from "svelte";
+  import { MaterialApp, Row, Col, ExpansionPanel, ExpansionPanels, Icon, Button, Divider } from "svelte-materialify";
 
   let offers = [];
   let chosenOffer;
-
-  /**
-   * Helper function to delete previous flight data
-   */
-  export function resetFlights() {
-    offers = [];
-  }
+  const dispatch = createEventDispatcher();
 
   /**
    * Listener for the response of a flights offer search from the FlightSearch component
@@ -34,18 +29,39 @@
     document.querySelector('div.outbound-flights').style.display = 'none';
     document.querySelector('div.inbound-flights').style.display = 'block';
     chosenOffer = offer;
+    dispatch("outboundSelected");
   }
 
-  function changeDepart() {
-    document.querySelector('div.outbound-flights').style.display = 'block';
+  export function changeDepart() {
+    document.querySelector('div.outbound-flights').style.display = 'flex';
     document.querySelector('div.inbound-flights').style.display = 'none';
     chosenOffer = null;
+    dispatch('changeDepart');
+  }
+
+  function selectInbound(selectedInbound) {
+    document.querySelector('div.outbound-flights').style.display = 'none';
+    document.querySelector('div.inbound-flights').style.display = 'none';
+    let trip = {
+      validatingAirline: chosenOffer.validatingAirline,
+      outbound: chosenOffer.outbound,
+      inbounds: [selectedInbound]
+    };
+    dispatch('offerChosen', trip);
+  }
+
+  /**
+  * Helper function to delete previous flight data
+  */
+  export function resetFlights() {
+    offers = [];
+    changeDepart();
   }
 
 </script>
 
 <MaterialApp>
-  <ExpansionPanels multiple class="outbound-flights">
+  <ExpansionPanels class="outbound-flights">
     {#each offers as offer}
       <ExpansionPanel>
         <span style="width: 100%" slot="header">
@@ -76,7 +92,7 @@
               <span class="flight-bottom-row flight-stops-row">{offer.outbound.stops}</span>
             </Col>
             <Col cols={2} lg={2} class="d-flex justify-center align-center">
-              <span class="flight-price-row flight-row">{offer.priceFormatted}</span>
+              <span class="flight-price-row flight-row">{offer.priceFrom}</span>
             </Col>
           </Row>
         </span>
@@ -120,18 +136,13 @@
     {#if chosenOffer}
     <Row>
       <Col class="d-flex justify-space-between">
-        <span style="font-size: 18px;">Departing flight:</span>
+        <span style="font-size: 18px;">Flight to <b>{chosenOffer.outbound.arrivalAirport}</b> on {chosenOffer.outbound.departureDate}</span>
         <Button class="change-outbound-btn" text on:click={changeDepart}>Change depart</Button>
       </Col>
     </Row>
     <ExpansionPanels>
       <ExpansionPanel>
         <span style="width: 100%" slot="header">
-          <Row>
-            <Col class="d-flex align-center justify-space-between">
-              <span>Flight to <b>{chosenOffer.outbound.arrivalAirport}</b> on {chosenOffer.outbound.departureDate}</span>
-            </Col>
-          </Row>
           <Row class="d-flex align-center">
             <Col cols={2} lg={1}>
               <img 
@@ -193,9 +204,11 @@
       </ExpansionPanel>
     </ExpansionPanels>
     <div class="mt-4 mb-4">
-      <span style="font-size: 18px;">Returning flights:</span>
+      <Divider class="mb-4"/>
+      <span style="font-size: 18px;">Choose the returning flight:</span>
     </div>
     <ExpansionPanels>
+      {#each chosenOffer.inbounds as inbound}
       <ExpansionPanel>
         <span style="width: 100%" slot="header">
           <Row class="d-flex align-center">
@@ -210,28 +223,28 @@
             <Col cols={3} lg={4} class="d-flex flex-column align-center">
               <span class="flight-upper-row flight-row">
                 <Icon class="flight-row-icon" size="25px" path={mdiAirplaneTakeoff}/>
-                {chosenOffer.inbound.departureAirport} &bull; {chosenOffer.inbound.departureTime}
+                {inbound.departureAirport} &bull; {inbound.departureTime}
               </span>
               <span class="flight-bottom-row flight-row">
                 <Icon class="flight-row-icon" size="25px" path={mdiAirplaneLanding}/>
-                {chosenOffer.inbound.arrivalAirport} &bull; {chosenOffer.inbound.arrivalTime}
+                {inbound.arrivalAirport} &bull; {inbound.arrivalTime}
               </span>
             </Col>
             <Col cols={4} lg={4} class="d-flex flex-column align-center">
               <span class="flight-upper-row flight-row">
                 <Icon class="flight-row-icon" size="25px" path={mdiClockTimeFourOutline}/>
-                {chosenOffer.inbound.duration}
+                {inbound.duration}
               </span>
-              <span class="flight-bottom-row flight-stops-row">{chosenOffer.inbound.stops}</span>
+              <span class="flight-bottom-row flight-stops-row">{inbound.stops}</span>
             </Col>
             <Col cols={2} lg={2} class="d-flex justify-center align-center">
-              <span class="flight-price-row flight-row">{chosenOffer.priceFormatted}</span>
+              <span class="flight-price-row flight-row">{inbound.priceFormatted}</span>
             </Col>
           </Row>
         </span>
         <Row class="d-flex align-center justify-center">
-          {@const flightColSize = chosenOffer.inbound.segments.length <= 2 ? 4 : 2}
-          {#each chosenOffer.inbound.segments as segment, i }
+          {@const flightColSize = inbound.segments.length <= 2 ? 4 : 2}
+          {#each inbound.segments as segment, i }
             <Col cols={12} lg={flightColSize} class="flight-details d-flex justify-center">
               <div class="d-flex flex-column">
                 <span class="flight-row justify-center">
@@ -251,15 +264,19 @@
                 </span>
               </div>
             </Col>
-            {#if i < chosenOffer.inbound.segments.length - 1}
+            {#if i < inbound.segments.length - 1}
             <Col cols={12} lg={2} class="d-flex flex-column justify-center flight-details mb-3">
               <span style="text-align: center;">Stop in <b>{segment.destination}</b></span>
               <span style="text-align: center;">{segment.stopDuration}</span>
             </Col>
             {/if}
           {/each}
+          <Col cols={12} class="d-flex flex-column justify-center">
+            <Button class="select-return-btn" text on:click={() => selectInbound(inbound)}>Select flight</Button>
+          </Col>
         </Row>
       </ExpansionPanel>
+      {/each}
     </ExpansionPanels>
     {/if}
   </div>
@@ -307,7 +324,9 @@
   }
 
   :global(button.select-flight-btn),
-  :global(button.change-outbound-btn) {
+  :global(button.change-outbound-btn),
+  :global(button.select-return-btn),
+  :global(button.change-flights-btn) {
     color: var(--amadeus-blue);
   }
 
