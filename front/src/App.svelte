@@ -24,7 +24,7 @@
    */
   function offersReady(data) {
     if (data.offers.length > 0) {
-      flightsView.flightSearchListener(data);
+      flightsView.flightSearchListener(data.offers);
       if (!data.datesChange) calendar.showCalendarButton();
     }
   }

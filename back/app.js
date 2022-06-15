@@ -233,23 +233,7 @@ function getFlightOffers(origin, destination, departureDate, returnDate, adults,
       let offers = response.data.map(offer => {
         let offerData = {};
         offerData.priceFormatted = currencyFormatter.format(offer.price.total);
-
-        let nbSegments = offer.itineraries[0].segments.length;
-        offerData.stops = `${nbSegments == 1 ? 'Nonstop' : (nbSegments - 1) + ' stop' + (nbSegments >= 3 ? 's' : '')}`;
-  
-        let departureDate = new Date(offer.itineraries[0].segments[0].departure.at);
-        let arrivalDate = new Date(offer.itineraries[0].segments[nbSegments - 1].arrival.at)
-        offerData.departureTime = format(departureDate, 'HH:mm');
-        offerData.arrivalTime = format(arrivalDate, 'HH:mm');
-  
-        offerData.totalDuration = formatDuration(offer.itineraries[0].duration);
-  
-        offerData.departureAirport = offer.itineraries[0].segments[0].departure.iataCode;
-        offerData.arrivalAirport = offer.itineraries[0].segments[nbSegments - 1].arrival.iataCode;
-        
-        //Join location API
-        offerData.originCity = origin;
-        offerData.destinationCity = destination;
+        offerData.validatingAirline = offer.validatingAirlineCodes[0];
 
         offer.itineraries.forEach((itinerary, i) => {
           let itineraryData = {};
@@ -273,6 +257,17 @@ function getFlightOffers(origin, destination, departureDate, returnDate, adults,
             segmentData.flightNumber = segment.number;
             segmentData.aircraft = segment.aircraft.code;
             segmentData.class = formatString(offer.travelerPricings[0].fareDetailsBySegment.find(fd => fd.segmentId === segment.id).cabin.replace('_', ' ')) || '';
+
+            if (i === 0) {
+              itineraryData.departureAirport = segment.departure.iataCode;
+              itineraryData.departureTime = segmentData.departureTime;
+              itineraryData.departureDate = segmentData.departureDate;
+            }
+            if (i === itinerary.segments.length - 1) {
+              itineraryData.arrivalAirport = segment.arrival.iataCode;
+              itineraryData.arrivalTime = segmentData.arrivalTime;
+              itineraryData.arrivalDate = segmentData.arrivalDate;
+            }
 
             if (i < nbSegments - 1) {
               let nextDeparture = new Date(itinerary.segments[i + 1].departure.at);
