@@ -181,10 +181,6 @@ import { createEventDispatcher } from "svelte";
     margin-bottom: 15px;
   }
 
-  span.flight-price-row {
-    font-size: 19px;
-  }
-
   :global(i.flight-row-icon) {
     margin-right: 8px;
   }
@@ -212,10 +208,5 @@ import { createEventDispatcher } from "svelte";
   :global(button.select-return-btn) {
     color: var(--amadeus-blue);
   }
-
-  div.inbound-flights {
-    display: none;
-  }
-
 
 </style>
