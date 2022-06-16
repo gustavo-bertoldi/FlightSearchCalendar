@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import { onMount, createEventDispatcher, getContext } from 'svelte';
 	import {
 		TextField,
@@ -10,11 +10,11 @@
 		Icon,
 		Menu,
 		List,
-		ListGroup,
 		ListItem
 	} from 'svelte-materialify';
 	import { addDays, format, isAfter, isSameDay } from 'date-fns';
 	import { mdiCalendar, mdiFormatTextRotationDownVertical, mdiMenuDown } from '@mdi/js';
+  import type { FlightSearchForm, AutocompleteSuggestions, AutocompleteSuggestion } from 'src/@types';
 
 	const API_URL = getContext('API_URL');
 	const AMADEUS_BLUE = 'rgb(0,94,184)';
@@ -23,19 +23,19 @@
 	//Autocomplete variables
 	//The timeouts are used to store the interval between keypresses by the user
 	//The objective is to start a request to the autocomplete service when user stops typing
-	let originTimeout;
-	let destinationTimeout;
+	let originTimeout: number;
+	let destinationTimeout: number;
 	const timeoutInterval = 750;
-	let suggestionsAutocomplete = {
+	let suggestionsAutocomplete: AutocompleteSuggestions = {
 		origin: [],
 		destination: []
 	};
 
 	//Form values, the initialized values are the default ones in the form, no values means an empty field
 	let flightOneWayRoundtrip = 'Roundtrip';
-	let flightOneWayRoundtripMenuActive;
+	let flightOneWayRoundtripMenuActive: boolean;
 	let flightClass = 'Economy';
-	let classMenuActive;
+	let classMenuActive: boolean;
 	let originInput = 'JFK - New York';
 	let destinationInput = 'LAX - Los Angeles';
 	//Variables starting with a $ are Svelte's dynamic variables. They are recalculated each time
@@ -53,7 +53,7 @@
 	//Rules to check form validity
 	//Origin can't be empty neither equal to destination
 	const originRules = [
-		(v) => {
+		(v: string) => {
 			searchActive = false;
 			if (!v) {
 				return 'Please enter the origin city or airport';
@@ -66,7 +66,7 @@
 	];
 	//Destination can't be empty neither equal to origin
 	const destinationRules = [
-		(v) => {
+		(v: string) => {
 			searchActive = false;
 			if (!v) {
 				return 'Please enter the destination city or airport';
@@ -78,11 +78,11 @@
 		}
 	];
 	//Departure date can't be empty
-	const departureDateRules = [(v) => !!v || 'Please enter the date of departure'];
+	const departureDateRules = [(v: string) => !!v || 'Please enter the date of departure'];
 	//Return date can't be empty
-	const returnDateRules = [(v) => !!v || 'Please enter the date of return'];
+	const returnDateRules = [(v: string) => !!v || 'Please enter the date of return'];
 	//Adults can't be empty
-	const adultsRules = [(v) => !!v || 'Please enter number of adults'];
+	const adultsRules = [(v: string) => !!v || 'Please enter number of adults'];
 
 	/**
 	 * Helper function to validate dates
@@ -95,7 +95,7 @@
 	 * @param {Date} date Date to be verified
 	 * @return {Date} Verified and valid date
 	 */
-	function dateVerification(date) {
+	function dateVerification(date: Date): Date {
 		const today = new Date();
 		const tomorrow = addDays(today, 1);
 		const dayAfterTomorrow = addDays(today, 2);
@@ -115,34 +115,34 @@
 	 * Helper function to start loading.
 	 */
 	function startLoading() {
-		document.getElementById('loader-container').style.display = 'flex';
-		document.getElementById('search-flights-btn').style.display = 'none';
-		document.getElementById('calendar-view-btn').style.visibility = 'hidden';
+		if (document.getElementById('loader-container')) document.getElementById('loader-container')!.style.display = 'flex';
+		if (document.getElementById('search-flights-btn')) document.getElementById('search-flights-btn')!.style.display = 'none';
+		if (document.getElementById('calendar-view-btn')) document.getElementById('calendar-view-btn')!.style.visibility = 'hidden';
 	}
 
 	/**
 	 * Helper function to stop loading.
 	 */
 	function stopLoading() {
-		document.getElementById('loader-container').style.display = 'none';
-		document.getElementById('search-flights-btn').style.display = 'block';
-		document.getElementById('calendar-view-btn').style.visibility = 'visible';
+		if (document.getElementById('loader-container')) document.getElementById('loader-container')!.style.display = 'none';
+		if (document.getElementById('search-flights-btn')) document.getElementById('search-flights-btn')!.style.display = 'block';
+		if (document.getElementById('calendar-view-btn')) document.getElementById('calendar-view-btn')!.style.visibility = 'visible';
 	}
 
 	/**
 	 * Helper function to start loading on input field given in parameter
 	 * @param {string} input Input field. Can take values 'origin' and 'destination'
 	 */
-	function autocompleteStartLoading(input) {
-		document.getElementById(`${input}-autocomplete-load`).style.display = 'block';
+	function autocompleteStartLoading(input: string) {
+		if (document.getElementById(`${input}-autocomplete-load`)) document.getElementById(`${input}-autocomplete-load`)!.style.display = 'block';
 	}
 
 	/**
 	 * Helper function to stop loading on input field given in parameter
 	 * @param {string} input Input field. Can take values 'origin' and 'destination'
 	 */
-	function autocompleteStopLoading(input) {
-		document.getElementById(`${input}-autocomplete-load`).style.display = 'none';
+	function autocompleteStopLoading(input: string) {
+		if (document.getElementById(`${input}-autocomplete-load`)) document.getElementById(`${input}-autocomplete-load`)!.style.display = 'none';
 	}
 
 	/**
@@ -151,14 +151,17 @@
 	 * and return additional parameter in the case of a calendar scroll
 	 * @returns {object} Object containing all the needed data, after treatment, to be sent in the request
 	 */
-	function getFormData(forCalendar) {
-		let formData = {};
+	function getFormData(forCalendar: boolean): FlightSearchForm {
 		let departureDate = new Date(flightDepartureDate);
 		let returnDate = new Date(flightReturnDate);
-		formData.origin = flightOrigin;
-		formData.destination = flightDestination;
-		formData.adults = nbAdults;
-		formData.class = flightClass.toUpperCase().replace(' ', '_');
+    let formData: FlightSearchForm = {
+      origin: flightOrigin,
+      destination: flightDestination,
+      adults: parseInt(nbAdults),
+      class:  flightClass.toUpperCase().replace(' ', '_'),
+      departureDateFormatted: format(departureDate, 'yyyy-MM-dd'),
+      returnDateFormatted: format(returnDate, 'yyyy-MM-dd')
+    }
 
 		if (forCalendar) {
 			departureDate = dateVerification(departureDate);
@@ -167,8 +170,6 @@
 			formData.selectedReturnDate = flightReturnDate;
 		}
 
-		formData.departureDateFormatted = format(departureDate, 'yyyy-MM-dd');
-		formData.returnDateFormatted = format(returnDate, 'yyyy-MM-dd');
 		return formData;
 	}
 
@@ -180,7 +181,7 @@
 	 * @param {boolean} datesChange Indicates if the source of the request is a click on a
 	 * new datepair in the calendar
 	 */
-	function flightSearch(datesChange) {
+	function flightSearch(datesChange: boolean) {
 		const formData = getFormData(false);
 		if (datesChange)
 			dispatch('datesChange', {
@@ -260,13 +261,20 @@
 	 * return date to the selected one.
 	 */
 	function departureDateSelected() {
-		let dateSelected = document.getElementById('fs-flight-departure-date')?.value;
-		let returnDate = document.getElementById('fs-flight-return-date')?.value;
+    let flightDepartureInput = document.getElementById('fs-flight-departure-date');
+    let flightReturnInput = document.getElementById('fs-flight-return-date');
+
+    let dateSelected: string;
+    let returnDate: string;
+    if (flightDepartureInput instanceof HTMLInputElement && flightReturnInput instanceof HTMLInputElement) {
+      dateSelected = flightDepartureInput.value;
+		  returnDate = flightReturnInput.value;
+    } else return;
 
 		if (dateSelected) {
-			document.getElementById('fs-flight-return-date').setAttribute('min', dateSelected);
+			flightReturnInput!.setAttribute('min', dateSelected);
 			if (returnDate && isAfter(new Date(dateSelected), new Date(returnDate))) {
-				document.getElementById('fs-flight-return-date').value = dateSelected;
+				flightReturnInput.value = dateSelected;
 			}
 		}
 	}
@@ -277,10 +285,8 @@
 	 * @param {string} str Input uppercase string
 	 * @returns {string} Output
 	 */
-	function formatString(str) {
-		str = str.split(' ');
-		str = str.map((word) => (word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()));
-		return str.join(' ');
+	function formatString(str: string): string {
+		return str.split(' ').map((word) => (word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())).join(' ');
 	}
 
 	/**
@@ -288,16 +294,17 @@
 	 * @param {string} keyword Value of input field
 	 * @param {string} input Input field, can take values 'origin' and 'destination'
 	 */
-	function searchSuggestion(keyword, input) {
+	function searchSuggestion(keyword: string, input: string) {
 		if (!keyword) return;
+
 		autocompleteStartLoading(input);
 		const apiURL = `${API_URL}/search-suggestions?keyword=${keyword}`;
 		const request = new Request(apiURL, { method: 'GET' });
 		fetch(request)
 			.then((response) => response.json())
-			.then((suggestions) => {
+			.then((suggestions: any) => {
 				suggestionsAutocomplete[input] = [];
-				suggestions.data.forEach((sugg) => {
+				suggestions.data.forEach((sugg: any) => {
 					suggestionsAutocomplete[input].push({
 						iataCode: sugg.iataCode,
 						name: formatString(sugg.name),
@@ -315,7 +322,7 @@
 	 * @param {object} suggestion Object containing the selected suggestion data
 	 * such as IATA code and city name.
 	 */
-	function autocompleteSelected(input, suggestion) {
+	function autocompleteSelected(input: string, suggestion: AutocompleteSuggestion) {
 		if (input == 'origin') {
 			originCity = suggestion.cityName;
 			flightOrigin = suggestion.iataCode;
@@ -324,8 +331,10 @@
 			flightDestination = suggestion.iataCode;
 		}
 		let flightInput = document.getElementById(`fs-flight-${input}`);
-		flightInput.value = `${suggestion.iataCode} - ${suggestion.cityName}`;
-		flightInput.dispatchEvent(new Event('input'));
+    if (flightInput instanceof HTMLInputElement) {
+      flightInput.value = `${suggestion.iataCode} - ${suggestion.cityName}`;
+		  flightInput.dispatchEvent(new Event('input'));
+    }
 	}
 
 	/**
@@ -333,9 +342,13 @@
 	 * @param {string} depDate New departure date in the format 'yyyy-MM-dd'
 	 * @param {string} retDate New return date in the format 'yyyy-MM-dd'
 	 */
-	export function newDateSearch(depDate, retDate) {
-		document.getElementById('fs-flight-departure-date').value = depDate;
-		document.getElementById('fs-flight-return-date').value = retDate;
+	export function newDateSearch(depDate: string, retDate: string) {
+    let departureDateInput = document.getElementById('fs-flight-departure-date');
+    let returnDateInput = document.getElementById('fs-flight-return-date');
+    if (departureDateInput instanceof HTMLInputElement && returnDateInput instanceof HTMLInputElement) {
+      departureDateInput.value = depDate;
+		  returnDateInput.value = retDate;
+    }
 		flightDepartureDate = depDate;
 		flightReturnDate = retDate;
 		flightSearch(true);
@@ -346,34 +359,43 @@
 	 */
 	onMount(() => {
 		//Flight origin autocomplete event listeners
-		document.getElementById('fs-flight-origin').addEventListener('focus', () => {
-			document.getElementById('origin-items-list').style.display = 'block';
+		document.getElementById('fs-flight-origin')?.addEventListener('focus', () => {
+      let originItemsList = document.getElementById('origin-items-list');
+			if (originItemsList !== null) originItemsList.style.display = 'block';
 		});
-		document.getElementById('fs-flight-origin').addEventListener('focusout', () => {
+		document.getElementById('fs-flight-origin')?.addEventListener('focusout', () => {
 			setTimeout(() => {
-				document.getElementById('origin-items-list').style.display = 'none';
+				let originItemsList = document.getElementById('origin-items-list');
+			  if (originItemsList !== null) originItemsList.style.display = 'none';
 			}, 200);
 		});
-		document.getElementById('fs-flight-origin').addEventListener('keydown', function () {
+		document.getElementById('fs-flight-origin')?.addEventListener('keydown', function () {
 			clearTimeout(originTimeout);
-			originTimeout = setTimeout(() => searchSuggestion(this.value, 'origin'), timeoutInterval);
+      let flightOriginInput = this;
+      if (flightOriginInput instanceof HTMLInputElement) {
+        let flightOrigin = flightOriginInput.value;
+        originTimeout = window.setTimeout(() => searchSuggestion(flightOrigin, 'origin'), timeoutInterval);
+      }
 		});
 
 		//Flight destination event listeners
-		document.getElementById('fs-flight-destination').addEventListener('focus', () => {
-			document.getElementById('destination-items-list').style.display = 'block';
+		document.getElementById('fs-flight-destination')?.addEventListener('focus', () => {
+      let destinationItemsList = document.getElementById('destination-items-list');
+      if (destinationItemsList !== null) destinationItemsList.style.display = 'block';
 		});
-		document.getElementById('fs-flight-destination').addEventListener('focusout', () => {
+		document.getElementById('fs-flight-destination')?.addEventListener('focusout', () => {
 			setTimeout(() => {
-				document.getElementById('destination-items-list').style.display = 'none';
+				let destinationItemsList = document.getElementById('destination-items-list');
+      if (destinationItemsList !== null) destinationItemsList.style.display = 'none';
 			}, 200);
 		});
-		document.getElementById('fs-flight-destination').addEventListener('keydown', function () {
+		document.getElementById('fs-flight-destination')?.addEventListener('keydown', function () {
 			clearTimeout(destinationTimeout);
-			destinationTimeout = setTimeout(
-				() => searchSuggestion(this.value, 'destination'),
-				timeoutInterval
-			);
+      let flightDestinationInput = this;
+      if (flightDestinationInput instanceof HTMLInputElement) {
+        let flightDestination = flightDestinationInput.value;
+        destinationTimeout = window.setTimeout(() => searchSuggestion(flightDestination, 'destination'), timeoutInterval); 
+      }
 		});
 	});
 </script>

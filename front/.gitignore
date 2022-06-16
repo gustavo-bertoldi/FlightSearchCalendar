@@ -6,3 +6,10 @@ node_modules
 .env
 .env.*
 !.env.example
+package-lock.json
+.eslintignore
+.eslintrc.cjs
+.npmrc
+.prettierignore
+.prettierrc
+

@@ -1,5 +1,6 @@
-<script>
+<script lang="ts">
 	import { mdiAirplaneTakeoff, mdiAirplaneLanding, mdiClockTimeFourOutline } from '@mdi/js';
+import type { FlightOffer } from 'src/@types';
 	import { createEventDispatcher } from 'svelte';
 	import {
 		MaterialApp,
@@ -12,19 +13,27 @@
 		Divider
 	} from 'svelte-materialify';
 
-	let chosenOffer;
-	let offerInfo = null;
+	let chosenOffer: FlightOffer;
+  let offerSet: boolean = false;
 	const dispatch = createEventDispatcher();
 
-	export function setChosenOffer(data) {
-		offerInfo = data;
-		document.getElementById('trip-view').style.display = 'flex';
+	export function setChosenOffer(data: FlightOffer) {
+		chosenOffer = data;
+    offerSet = true;
+    let tripView = document.getElementById('trip-view');
+		if (tripView) tripView.style.display = 'flex';
 	}
 
 	export function resetChosenOffer() {
-		document.getElementById('trip-view').style.display = 'none';
-		offerInfo = null;
+		let tripView = document.getElementById('trip-view');
+		if (tripView) tripView.style.display = 'none';
+		offerSet = false;
 	}
+
+  function carrierImgErrorHandler(this: HTMLImageElement) {
+    this.onerror = null;
+		this.src = 'airplane-tail.png';
+  }
 
 	function changeFlights() {
 		resetChosenOffer();
@@ -34,16 +43,16 @@
 
 <MaterialApp>
 	<div class="d-flex flex-column" id="trip-view">
-		{#if offerInfo}
+		{#if offerSet}
 			<div class="d-flex justify-space-between pb-3">
-				<span style="font-size: 24px;">Your trip to <b>{offerInfo.outbound.arrivalAirport}</b></span
+				<span style="font-size: 24px;">Your trip to <b>{chosenOffer.outbound.arrivalAirport}</b></span
 				>
-				<span style="font-size: 24px;"><b>{offerInfo.inbounds[0].priceFormatted}</b></span>
+				<span style="font-size: 24px;"><b>{chosenOffer.inbounds[0].priceFormatted}</b></span>
 			</div>
 			<Divider />
 			<div class="change-flights d-flex justify-space-between align-center">
 				<span style="font-size: 18px; padding: 20px 0px;"
-					>Departing on {offerInfo.outbound.departureDate}</span
+					>Departing on {chosenOffer.outbound.departureDate}</span
 				>
 				<Button class="change-flights-btn" text on:click={() => changeFlights()}
 					>Change flights</Button
@@ -55,11 +64,8 @@
 						<Row class="d-flex align-center">
 							<Col cols={2} lg={1}>
 								<img
-									src={`https://s1.apideeplink.com/images/airlines/${offerInfo.validatingAirline}.png`}
-									on:error={function errHandler() {
-										this.onerror = null;
-										this.src = 'airplane-tail.png';
-									}}
+									src={`https://s1.apideeplink.com/images/airlines/${chosenOffer.validatingAirline}.png`}
+									on:error={carrierImgErrorHandler}
 									alt="Carrier logo"
 									style="width: inherit;"
 								/>
@@ -67,25 +73,25 @@
 							<Col cols={6} lg={5} class="d-flex flex-column align-center">
 								<span class="flight-upper-row flight-row">
 									<Icon class="flight-row-icon" size="25px" path={mdiAirplaneTakeoff} />
-									{offerInfo.outbound.departureAirport} &bull; {offerInfo.outbound.departureTime}
+									{chosenOffer.outbound.departureAirport} &bull; {chosenOffer.outbound.departureTime}
 								</span>
 								<span class="flight-bottom-row flight-row">
 									<Icon class="flight-row-icon" size="25px" path={mdiAirplaneLanding} />
-									{offerInfo.outbound.arrivalAirport} &bull; {offerInfo.outbound.arrivalTime}
+									{chosenOffer.outbound.arrivalAirport} &bull; {chosenOffer.outbound.arrivalTime}
 								</span>
 							</Col>
 							<Col cols={4} lg={5} class="d-flex flex-column align-center">
 								<span class="flight-upper-row flight-row">
 									<Icon class="flight-row-icon" size="25px" path={mdiClockTimeFourOutline} />
-									{offerInfo.outbound.duration}
+									{chosenOffer.outbound.duration}
 								</span>
-								<span class="flight-bottom-row flight-stops-row">{offerInfo.outbound.stops}</span>
+								<span class="flight-bottom-row flight-stops-row">{chosenOffer.outbound.stops}</span>
 							</Col>
 						</Row>
 					</span>
 					<Row class="d-flex align-center justify-center">
-						{@const flightColSize = offerInfo.outbound.segments.length <= 2 ? 4 : 2}
-						{#each offerInfo.outbound.segments as segment, i}
+						{@const flightColSize = chosenOffer.outbound.segments.length <= 2 ? 4 : 2}
+						{#each chosenOffer.outbound.segments as segment, i}
 							<Col cols={12} lg={flightColSize} class="flight-details d-flex justify-center">
 								<div class="d-flex flex-column">
 									<span class="flight-row justify-center">
@@ -106,7 +112,7 @@
 									</span>
 								</div>
 							</Col>
-							{#if i < offerInfo.outbound.segments.length - 1}
+							{#if i < chosenOffer.outbound.segments.length - 1}
 								<Col cols={12} lg={2} class="d-flex flex-column justify-center flight-details mb-3">
 									<span style="text-align: center;">Stop in <b>{segment.destination}</b></span>
 									<span style="text-align: center;">{segment.stopDuration}</span>
@@ -117,7 +123,7 @@
 				</ExpansionPanel>
 			</ExpansionPanels>
 			<span style="font-size: 18px; padding: 20px 0px;"
-				>Returning on {offerInfo.inbounds[0].departureDate}</span
+				>Returning on {chosenOffer.inbounds[0].departureDate}</span
 			>
 			<ExpansionPanels class="inbound-flight">
 				<ExpansionPanel>
@@ -125,11 +131,8 @@
 						<Row class="d-flex align-center">
 							<Col cols={2} lg={1}>
 								<img
-									src={`https://s1.apideeplink.com/images/airlines/${offerInfo.validatingAirline}.png`}
-									on:error={function errHandler() {
-										this.onerror = null;
-										this.src = 'airplane-tail.png';
-									}}
+									src={`https://s1.apideeplink.com/images/airlines/${chosenOffer.validatingAirline}.png`}
+									on:error={carrierImgErrorHandler}
 									alt="Carrier logo"
 									style="width: inherit;"
 								/>
@@ -137,27 +140,27 @@
 							<Col cols={6} lg={5} class="d-flex flex-column align-center">
 								<span class="flight-upper-row flight-row">
 									<Icon class="flight-row-icon" size="25px" path={mdiAirplaneTakeoff} />
-									{offerInfo.inbounds[0].departureAirport} &bull; {offerInfo.inbounds[0]
+									{chosenOffer.inbounds[0].departureAirport} &bull; {chosenOffer.inbounds[0]
 										.departureTime}
 								</span>
 								<span class="flight-bottom-row flight-row">
 									<Icon class="flight-row-icon" size="25px" path={mdiAirplaneLanding} />
-									{offerInfo.inbounds[0].arrivalAirport} &bull; {offerInfo.inbounds[0].arrivalTime}
+									{chosenOffer.inbounds[0].arrivalAirport} &bull; {chosenOffer.inbounds[0].arrivalTime}
 								</span>
 							</Col>
 							<Col cols={4} lg={5} class="d-flex flex-column align-center">
 								<span class="flight-upper-row flight-row">
 									<Icon class="flight-row-icon" size="25px" path={mdiClockTimeFourOutline} />
-									{offerInfo.inbounds[0].duration}
+									{chosenOffer.inbounds[0].duration}
 								</span>
-								<span class="flight-bottom-row flight-stops-row">{offerInfo.inbounds[0].stops}</span
+								<span class="flight-bottom-row flight-stops-row">{chosenOffer.inbounds[0].stops}</span
 								>
 							</Col>
 						</Row>
 					</span>
 					<Row class="d-flex align-center justify-center">
-						{@const flightColSize = offerInfo.inbounds[0].segments.length <= 2 ? 4 : 2}
-						{#each offerInfo.inbounds[0].segments as segment, i}
+						{@const flightColSize = chosenOffer.inbounds[0].segments.length <= 2 ? 4 : 2}
+						{#each chosenOffer.inbounds[0].segments as segment, i}
 							<Col cols={12} lg={flightColSize} class="flight-details d-flex justify-center">
 								<div class="d-flex flex-column">
 									<span class="flight-row justify-center">
@@ -178,7 +181,7 @@
 									</span>
 								</div>
 							</Col>
-							{#if i < offerInfo.inbounds[0].segments.length - 1}
+							{#if i < chosenOffer.inbounds[0].segments.length - 1}
 								<Col cols={12} lg={2} class="d-flex flex-column justify-center flight-details mb-3">
 									<span style="text-align: center;">Stop in <b>{segment.destination}</b></span>
 									<span style="text-align: center;">{segment.stopDuration}</span>

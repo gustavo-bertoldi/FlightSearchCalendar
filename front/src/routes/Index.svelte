@@ -1,16 +1,19 @@
 <script lang="ts">
 	import { setContext } from 'svelte';
-	import { Calendar, FlightSearch, FlightsView, TripView } from 'components';
+  import Calendar from '../components/Calendar.svelte';
+  import FlightSearch from '../components/FlightSearch.svelte';
+  import FlightsView from '../components/FlightsView.svelte';
+  import TripView from '../components/TripView.svelte';
 	import { MaterialApp, Row, Col, Snackbar } from 'svelte-materialify';
 	import type { SvelteComponent } from 'svelte/internal';
 
 	//One of the ways in Svelte to set a shared variable between the components. Backend URL.
 	setContext('API_URL', 'http://localhost:3000');
 
-	let calendar: SvelteComponent;
-	let flightsView: SvelteComponent;
-	let flightSearch: SvelteComponent;
-	let tripView: SvelteComponent;
+	let calendar: any;
+	let flightsView: any;
+	let flightSearch: any;
+	let tripView: any;
 	let errorBar = false;
 
 	/**
@@ -21,7 +24,7 @@
 	 * @property {string} data.destinationCity
 	 * @property {boolean} data.datesChange     True if only dates changed for the request (calendar click)
 	 */
-	function offersReady(data) {
+	function offersReady(data: any) {
 		if (data.offers.length > 0) {
 			flightsView.flightSearchListener(data.offers);
 			if (!data.datesChange) calendar.showCalendarButton();
@@ -45,7 +48,7 @@
 		flightsView.resetFlights();
 	}
 
-	function showTripView(trip) {
+	function showTripView(trip: any) {
 		tripView.setChosenOffer(trip);
 		calendar.hideCalendarButton();
 	}
