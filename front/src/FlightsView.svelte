@@ -66,7 +66,7 @@
       <ExpansionPanel>
         <span style="width: 100%" slot="header">
           <Row class="d-flex align-center">
-            <Col cols={2} lg={1}>
+            <Col cols={3} sm={2} md={1}>
               <img 
                 src={`https://s1.apideeplink.com/images/airlines/${offer.validatingAirline}.png`} 
                 on:error={function errHandler() {this.onerror=null; this.src='airplane-tail.png'}} 
@@ -74,7 +74,7 @@
                 style="width: inherit;"
               />
             </Col>
-            <Col cols={3} lg={4} class="d-flex flex-column align-center">
+            <Col cols={5} sm={4} class="d-flex flex-column align-center">
               <span class="flight-upper-row flight-row">
                 <Icon class="flight-row-icon" size="25px" path={mdiAirplaneTakeoff}/>
                 {offer.outbound.departureAirport} &bull; {offer.outbound.departureTime}
@@ -84,14 +84,14 @@
                 {offer.outbound.arrivalAirport} &bull; {offer.outbound.arrivalTime}
               </span>
             </Col>
-            <Col cols={4} lg={4} class="d-flex flex-column align-center">
+            <Col cols={4} sm={4} class="d-flex flex-column align-center">
               <span class="flight-upper-row flight-row">
                 <Icon class="flight-row-icon" size="25px" path={mdiClockTimeFourOutline}/>
                 {offer.outbound.duration}
               </span>
               <span class="flight-bottom-row flight-stops-row">{offer.outbound.stops}</span>
             </Col>
-            <Col cols={2} lg={2} class="d-flex justify-center align-center">
+            <Col cols={12} sm={2} class="d-flex justify-center align-center">
               <span class="flight-price-row flight-row">{offer.priceFrom}</span>
             </Col>
           </Row>
@@ -144,7 +144,7 @@
       <ExpansionPanel>
         <span style="width: 100%" slot="header">
           <Row class="d-flex align-center">
-            <Col cols={2} lg={1}>
+            <Col cols={3} lg={1}>
               <img 
                 src={`https://s1.apideeplink.com/images/airlines/${chosenOffer.validatingAirline}.png`} 
                 on:error={function errHandler() {this.onerror=null; this.src='airplane-tail.png'}} 
@@ -152,7 +152,7 @@
                 style="width: inherit;"
               />
             </Col>
-            <Col cols={3} lg={4} class="d-flex flex-column align-center">
+            <Col cols={5} lg={4} class="d-flex flex-column align-center">
               <span class="flight-upper-row flight-row">
                 <Icon class="flight-row-icon" size="25px" path={mdiAirplaneTakeoff}/>
                 {chosenOffer.outbound.departureAirport} &bull; {chosenOffer.outbound.departureTime}
@@ -212,7 +212,7 @@
       <ExpansionPanel>
         <span style="width: 100%" slot="header">
           <Row class="d-flex align-center">
-            <Col cols={2} lg={1}>
+            <Col cols={3} sm={2} md={1}>
               <img 
                 src={`https://s1.apideeplink.com/images/airlines/${chosenOffer.validatingAirline}.png`} 
                 on:error={function errHandler() {this.onerror=null; this.src='airplane-tail.png'}} 
@@ -220,7 +220,7 @@
                 style="width: inherit;"
               />
             </Col>
-            <Col cols={3} lg={4} class="d-flex flex-column align-center">
+            <Col cols={5} sm={4} class="d-flex flex-column align-center">
               <span class="flight-upper-row flight-row">
                 <Icon class="flight-row-icon" size="25px" path={mdiAirplaneTakeoff}/>
                 {inbound.departureAirport} &bull; {inbound.departureTime}
@@ -230,14 +230,14 @@
                 {inbound.arrivalAirport} &bull; {inbound.arrivalTime}
               </span>
             </Col>
-            <Col cols={4} lg={4} class="d-flex flex-column align-center">
+            <Col cols={4} sm={4} class="d-flex flex-column align-center">
               <span class="flight-upper-row flight-row">
                 <Icon class="flight-row-icon" size="25px" path={mdiClockTimeFourOutline}/>
                 {inbound.duration}
               </span>
               <span class="flight-bottom-row flight-stops-row">{inbound.stops}</span>
             </Col>
-            <Col cols={2} lg={2} class="d-flex justify-center align-center">
+            <Col cols={12} sm={2} class="d-flex justify-center align-center">
               <span class="flight-price-row flight-row">{inbound.priceFormatted}</span>
             </Col>
           </Row>
