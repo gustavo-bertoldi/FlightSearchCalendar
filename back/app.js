@@ -200,7 +200,7 @@ function getSearchSuggestions(keyword) {
 
 function getFlightOffers(origin, destination, departureDate, returnDate, adults, travelClass) {
   return new Promise(async (resolve, reject) => {
-    await wait(3*waitTime);
+    await wait(5*waitTime);
     amadeus.shopping.flightOffersSearch.get({
       originLocationCode: origin,
       destinationLocationCode: destination,
