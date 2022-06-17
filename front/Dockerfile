@@ -1,12 +1,11 @@
-FROM node:18-alpine
+FROM node:lts
 
 WORKDIR /front
 
 ENV PORT=5000
 ENV HOST=0.0.0.0
 
-COPY package.json ./
-COPY rollup.config.js ./
+COPY package.json .
 
 RUN npm i
 
@@ -16,4 +15,4 @@ RUN npm run build
 
 EXPOSE 5000
 
-CMD npm run start
+CMD npm run preview
