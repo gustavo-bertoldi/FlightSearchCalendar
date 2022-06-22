@@ -5,7 +5,6 @@
   import FlightsView from '../components/FlightsView.svelte';
   import TripView from '../components/TripView.svelte';
 	import { MaterialApp, Row, Col, Snackbar } from 'svelte-materialify';
-	import type { SvelteComponent } from 'svelte/internal';
 
 	//One of the ways in Svelte to set a shared variable between the components. Backend URL.
 	setContext('API_URL', 'http://localhost:3000');
