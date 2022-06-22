@@ -1,7 +1,28 @@
 steps:
-- name: 'gcr.io/cloud-builders/npm'
+- name: 'gcr.io/cloud-builders/docker'
   dir: './front'
-  args: ['run', 'build']
+  env: 
+  - 'PORT=8080'
+  args: ['build', '-t', 'europe-west2-docker.pkg.dev/$PROJECT_ID/fs-front/$COMMIT_SHA', '.']
+
+- name: 'gcr.io/cloud-builders/docker'
+  dir: './front'
+  args: ['push', 'europe-west2-docker.pkg.dev/$PROJECT_ID/fs-front/$COMMIT_SHA']
+
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'gcloud'
+  dir: './front'
+  args: 
+  - 'run' 
+  - 'deploy'
+  - 'fs-front'
+  - '--image'
+  - 'europe-west2-docker.pkg.dev/$PROJECT_ID/fs-front/$COMMIT_SHA'
+  - '--region'
+  - 'europe-west2'
+
+images:
+- europe-west2-docker.pkg.dev/$PROJECT_ID/fs-front/$COMMIT_SHA
 
 
   
