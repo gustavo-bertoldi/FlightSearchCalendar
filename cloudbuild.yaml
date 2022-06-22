@@ -5,8 +5,8 @@ steps:
   args: 
     - -c
     - |
-      docker build -t europe-west2-docker.pkg.dev/$PROJECT_ID/front-docker:$COMMIT_SHA . &&
-      docker push europe-west2-docker.pkg.dev/$PROJECT_ID/front-docker:$COMMIT_SHA
+      docker build -t europe-west2-docker.pkg.dev/$PROJECT_ID/front-docker/$COMMIT_SHA . &&
+      docker push europe-west2-docker.pkg.dev/$PROJECT_ID/front-docker/$COMMIT_SHA
   
 - name: 'gcr.io/cloud-builders/docker'
   entrypoint: 'bash'
@@ -14,8 +14,8 @@ steps:
   args: 
     - -c
     - |
-      docker build -t europe-west2-docker.pkg.dev/$PROJECT_ID/back-docker:$COMMIT_SHA . &&
-      docker push europe-west2-docker.pkg.dev/$PROJECT_ID/back-docker:$COMMIT_SHA
+      docker build -t europe-west2-docker.pkg.dev/$PROJECT_ID/back-docker/$COMMIT_SHA . &&
+      docker push europe-west2-docker.pkg.dev/$PROJECT_ID/back-docker/$COMMIT_SHA
   secretEnv: [ 'AMADEUS_CLIENT_ID', 'AMADEUS_CLIENT_SECRET' ]
   env:
   - 'CORS_ALLOW=localhost:5000'
