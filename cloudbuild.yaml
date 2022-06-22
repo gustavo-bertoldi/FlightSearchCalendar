@@ -24,7 +24,7 @@ steps:
 images:
 - europe-west2-docker.pkg.dev/$PROJECT_ID/fs-front/$COMMIT_SHA
 
- options:
+options:
   logging: CLOUD_LOGGING_ONLY
 
 
