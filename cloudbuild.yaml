@@ -1,8 +1,29 @@
 steps:
-- name: 'gcr.io/cloud-builders/npm'
-  dir: './back'
-  args: [ 'install' ]
+- name: 'gcr.io/cloud-builders/docker'
+  args: 
+    - -c
+    - |
+      docker build -t europe-west2-docker.pkg.dev/$PROJECT_ID/front-docker:$COMMIT_SHA . &&
+      docker push europe-west2-docker.pkg.dev/$PROJECT_ID/front-docker:$COMMIT_SHA
   
-- name: 'gcr.io/cloud-builders/npm'
+- name: 'gcr.io/cloud-builders/docker'
+  entrypoint: 'bash'
   dir: './back'
-  args: [ 'run', 'serve' ]
+  args: 
+    - -c
+    - |
+      docker build -t europe-west2-docker.pkg.dev/$PROJECT_ID/back-docker:$COMMIT_SHA . &&
+      docker push europe-west2-docker.pkg.dev/$PROJECT_ID/back-docker:$COMMIT_SHA
+  secretEnv: [ 'AMADEUS_CLIENT_ID', 'AMADEUS_CLIENT_SECRET' ]
+  env:
+  - 'CORS_ALLOW=localhost:5000'
+  - 'ENV=G_CLOUD'
+  
+availableSecrets:
+  secretManager:
+  - versionName: projects/$PROJECT_ID/secrets/AMADEUS_CLIENT_ID/versions/1
+    env: 'AMADEUS_CLIENT_ID'
+  - versionName: projects/$PROJECT_ID/secrets/AMADEUS_CLIENT_SECRET/versions/1
+    env: 'AMADEUS_CLIENT_SECRET'
+
+  
