@@ -120,7 +120,11 @@ function getCheapestDates(origin, destination, departureDate, returnDate, adults
           max: 1,
           travelClass: travelClass
         }).then((response) => {
-          flights[datepair] = response.data;
+          const currencyFormatter = Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: response.data[0].price.currency
+          });
+          flights[datepair] = currencyFormatter.format(response.data[0].price.total);
         }).catch((err) => {
           errorCount++;
           flights[datepair] = 'error';
@@ -169,7 +173,11 @@ function getCheapestDatepairs(origin, destination, adults, datepairs, travelClas
         max: 1,
         travelClass: travelClass
       }).then((response) => {
-        flights[datepair] = response.data;
+        const currencyFormatter = Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: response.data[0].price.currency
+        });
+        flights[datepair] = currencyFormatter.format(response.data[0].price.total);
       }).catch((err) => {
         errorCount++;
         flights[datepair] = 'error';
@@ -193,7 +201,16 @@ function getSearchSuggestions(keyword) {
       subType: Amadeus.location.any,
       keyword: keyword
     })
-    .then(response => resolve(response))
+    .then(response => {
+      let suggestions = response.result.data.map(entry => {
+        return {
+          iataCode: entry.iataCode,
+          name: entry.name,
+          cityName: entry.address.cityName
+        }
+      });
+      resolve(suggestions);
+    })
     .catch(err => reject(err))
   });
 }

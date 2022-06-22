@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { setContext } from 'svelte';
-  import Calendar from '../components/Calendar.svelte';
-  import FlightSearch from '../components/FlightSearch.svelte';
-  import FlightsView from '../components/FlightsView.svelte';
-  import TripView from '../components/TripView.svelte';
+  import Calendar from '$components/Calendar.svelte';
+  import FlightSearch from '$components/FlightSearch.svelte';
+  import FlightsView from '$components/FlightsView.svelte';
+  import TripView from '$components/TripView.svelte';
 	import { MaterialApp, Row, Col, Snackbar } from 'svelte-materialify';
-	import type { SvelteComponent } from 'svelte/internal';
+  import type { FlightOffer } from '$types/flight';
 
 	//One of the ways in Svelte to set a shared variable between the components. Backend URL.
 	setContext('API_URL', 'http://localhost:3000');
@@ -15,6 +15,7 @@
 	let flightSearch: any;
 	let tripView: any;
 	let errorBar = false;
+  let flightOffers: FlightOffer;
 
 	/**
 	 * Listener for the backend's response with search criteria data
@@ -25,8 +26,8 @@
 	 * @property {boolean} data.datesChange     True if only dates changed for the request (calendar click)
 	 */
 	function offersReady(data: any) {
+    flightOffers = data.offers;
 		if (data.offers.length > 0) {
-			flightsView.flightSearchListener(data.offers);
 			if (!data.datesChange) calendar.showCalendarButton();
 		}
 	}
@@ -109,6 +110,7 @@
 			<Col sm={12} md={10} lg={7}>
 				<FlightsView
 					bind:this={flightsView}
+          bind:offers={flightOffers}
 					on:offerChosen={(event) => showTripView(event.detail)}
 					on:outboundSelected={outboundSelected}
 					on:changeDepart={changeDepart}

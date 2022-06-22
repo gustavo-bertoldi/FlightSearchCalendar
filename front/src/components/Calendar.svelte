@@ -10,7 +10,7 @@
 		mdiCalendar,
 		mdiClose
 	} from '@mdi/js';
-	import type { CalendarData, CalendarScrollDirection, CalendarScrollType } from 'src/@types';
+	import type { CalendarData, CalendarScrollDirection, CalendarScrollType } from '$types/calendar';
 
 	const API_URL = getContext('API_URL');
 
