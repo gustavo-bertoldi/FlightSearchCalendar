@@ -1,5 +1,10 @@
 steps:
+- name: 'docker/compose:1.19.0'
+  args: [ 'up', '-d' ]
+
 - name: 'gcr.io/cloud-builders/docker'
-  args: [ 'build', '-t', 'europe-west2-docker.pkg.dev/$PROJECT_ID/flight-search-back/fs-back:tag1', '.' ]
-images:
-- 'us-west2-docker.pkg.dev/$PROJECT_ID/flight-search-back/fs-back:tag1'
+  args: [ 'tag', 'workspace_app:latest', 'gcr.io/$PROJECT_ID/$REPO_NAME:$COMMIT_SHA' ]
+
+images: ['gcr.io/$PROJECT_ID/$REPO_NAME:$COMMIT_SHA']
+
+
