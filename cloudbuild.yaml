@@ -1,5 +1,6 @@
 steps:
 - name: 'gcr.io/cloud-builders/docker'
+  entrypoint: 'bash'
   args: 
     - -c
     - |
@@ -21,9 +22,9 @@ steps:
   
 availableSecrets:
   secretManager:
-  - versionName: projects/$PROJECT_ID/secrets/AMADEUS_CLIENT_ID/versions/1
+  - versionName: projects/$PROJECT_ID/secrets/AMADEUS_CLIENT_ID/versions/latest
     env: 'AMADEUS_CLIENT_ID'
-  - versionName: projects/$PROJECT_ID/secrets/AMADEUS_CLIENT_SECRET/versions/1
+  - versionName: projects/$PROJECT_ID/secrets/AMADEUS_CLIENT_SECRET/versions/latest
     env: 'AMADEUS_CLIENT_SECRET'
 
   
