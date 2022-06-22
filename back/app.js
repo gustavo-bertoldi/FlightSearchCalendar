@@ -4,7 +4,7 @@ const addDays = require('date-fns/addDays')
 const bodyParser = require('body-parser');
 const url = require('url');
 const Amadeus = require('amadeus');
-const { isThisQuarter } = require('date-fns');
+const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
 require('dotenv/config');
 
 //Load server parameters

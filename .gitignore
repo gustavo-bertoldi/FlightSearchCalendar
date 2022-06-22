@@ -3,3 +3,4 @@
 AWS/
 Azure/
 build_local.sh
+*.ex.json
