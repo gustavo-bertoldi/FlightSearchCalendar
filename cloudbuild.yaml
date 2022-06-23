@@ -46,7 +46,7 @@ steps:
   - '--set-secrets'
   - 'AMADEUS_CLIENT_ID=AMADEUS_CLIENT_ID:latest,AMADEUS_CLIENT_SECRET=AMADEUS_CLIENT_SECRET:latest'
   - '--update-env-vars'
-  - 'ENV=GCLOUD'
+  - 'ENV=GCLOUD,CORS_ALLOW=https://fs-front-u6o6sehtja-nw.a.run.app'
 
 images:
 - europe-west2-docker.pkg.dev/$PROJECT_ID/fs-front/$COMMIT_SHA
