@@ -43,6 +43,8 @@ steps:
   - 'europe-west2'
   - '--port'
   - '3000'
+  - '--command'
+  - '"npm run serve"'
 
 images:
 - europe-west2-docker.pkg.dev/$PROJECT_ID/fs-front/$COMMIT_SHA
