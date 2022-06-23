@@ -1,11 +1,11 @@
 {
-	"name": "amadeusflightsearch",
+	"name": "amadeus-flight-search",
 	"version": "beta-0.1",
 	"scripts": {
-		"dev": "svelte-kit dev --port 8080",
+		"dev": "svelte-kit dev --port $PORT",
 		"build": "svelte-kit build",
 		"package": "svelte-kit package",
-		"preview": "svelte-kit preview --port 5000 --host 0.0.0.0",
+		"preview": "svelte-kit preview --port $PORT --host $HOST",
 		"prepare": "svelte-kit sync",
 		"check": "svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",

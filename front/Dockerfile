@@ -2,9 +2,9 @@ FROM node:lts
 
 WORKDIR /front
 
-ENV PORT "$PORT"
-
 EXPOSE $PORT
+
+ENV HOST "0.0.0.0"
 
 COPY package.json .
 
