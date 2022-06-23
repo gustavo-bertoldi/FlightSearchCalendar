@@ -97,9 +97,7 @@
 		}
 
 		//Update calendar with new dates
-		calendarData[type] = calendarData[type].map((date) =>
-			format(addDays(new Date(date), direction), 'yyyy-MM-dd')
-		);
+		calendarData[type] = calendarData[type].map((date) => format(addDays(new Date(date), direction), 'yyyy-MM-dd'));
 
 		//Create array with datepairs to search price
 		let toCompleteArray = type == 'departures' ? calendarData.returns : calendarData.departures;
@@ -135,7 +133,7 @@
 		fetch(request)
 			.then((response) => response.json())
 			.then(async (flights) => await addPricesToCalendar(flights))
-			.catch((err) => dispatch('error'));
+			.catch(() => dispatch('error'));
 	}
 
 	/**
@@ -265,11 +263,11 @@
 
 			//relX and relY are the relative positions of the clicked data to the original selected data
 			let relX;
-      let relY;
-      if (eventTarget.dataset.relx !== undefined) relX = parseInt(eventTarget.dataset.relx);
-      else return;
-      if (eventTarget.dataset.rely !== undefined) relY = parseInt(eventTarget.dataset.rely);
-      else return;
+			let relY;
+			if (eventTarget.dataset.relx !== undefined) relX = parseInt(eventTarget.dataset.relx);
+			else return;
+			if (eventTarget.dataset.rely !== undefined) relY = parseInt(eventTarget.dataset.rely);
+			else return;
 
 			if (!(relX === 0 && relY === 0)) {
 				dispatch('dateClicked', { depDate: depDate, retDate: retDate });
@@ -291,21 +289,16 @@
 	onMount(() => {
 		//Set dynamic style properties
 		let calendarWidth = document.querySelector<HTMLDivElement>('div.calendar-container')?.style.width;
-    let departureDateControl = document.querySelector<HTMLDivElement>('div.departure-date-control');
+		let departureDateControl = document.querySelector<HTMLDivElement>('div.departure-date-control');
 		if (departureDateControl && calendarWidth) departureDateControl.style.width = calendarWidth;
 	});
 </script>
 
 <div class="control-panel d-flex justify-end">
 	<Button class="white-text" id="calendar-view-btn" on:click={showCalendar} style="display: none;"
-		><Icon path={mdiCalendar} class="mr-3" />Calendar View</Button
-	>
-	<Button
-		class="red white-text"
-		id="calendar-close-btn"
-		on:click={hideCalendar}
-		style="display: none;"><Icon size="15px" path={mdiClose} class="mr-3" />Close</Button
-	>
+		><Icon path={mdiCalendar} class="mr-3" />Calendar View</Button>
+	<Button class="red white-text" id="calendar-close-btn" on:click={hideCalendar} style="display: none;"
+		><Icon size="15px" path={mdiClose} class="mr-3" />Close</Button>
 </div>
 <div class="main-container">
 	<div class="departure-date-control arrow-controls">
@@ -340,7 +333,9 @@
 						</div>
 					{:else}
 						{@const datepair = calendarData.departures[j] + '>' + calendarData.returns[i - 1]}
-						{@const priceObj = calendarData.prices[datepair] ? calendarData.prices[datepair] : {price: -1, priceFormatted: 'error'}}
+						{@const priceObj = calendarData.prices[datepair]
+							? calendarData.prices[datepair]
+							: { price: -1, priceFormatted: 'error' }}
 						{@const classes =
 							`calendar-item calendar-price` +
 							`${priceObj.price == calendarData.minPrice ? ' cheapest' : ''}` +
@@ -363,12 +358,9 @@
 							data-return={calendarData.returns[i - 1]}
 							data-relx={relX}
 							data-rely={relY}
-							on:click={(e) => dateClicked(e)}
-						>
+							on:click={(e) => dateClicked(e)}>
 							{#if priceObj.price !== -1}
-								<span class="calendar-item-text" data-price={priceObj.price}
-									>{priceObj.priceFormatted}</span
-								>
+								<span class="calendar-item-text" data-price={priceObj.price}>{priceObj.priceFormatted}</span>
 							{:else}
 								<ProgressCircular indeterminate color="rgb(0,94,184)" />
 							{/if}

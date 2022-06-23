@@ -13,8 +13,8 @@
 		ListItem
 	} from 'svelte-materialify';
 	import { addDays, format, isAfter, isSameDay } from 'date-fns';
-	import { mdiCalendar, mdiFormatTextRotationDownVertical, mdiMenuDown } from '@mdi/js';
-  import type { FlightSearchForm, AutocompleteSuggestions, AutocompleteSuggestion } from 'src/@types';
+	import { mdiMenuDown } from '@mdi/js';
+	import type { FlightSearchForm, AutocompleteSuggestions, AutocompleteSuggestion } from 'src/@types';
 
 	const API_URL = getContext('API_URL');
 	const AMADEUS_BLUE = 'rgb(0,94,184)';
@@ -115,18 +115,24 @@
 	 * Helper function to start loading.
 	 */
 	function startLoading() {
-		if (document.getElementById('loader-container')) document.getElementById('loader-container')!.style.display = 'flex';
-		if (document.getElementById('search-flights-btn')) document.getElementById('search-flights-btn')!.style.display = 'none';
-		if (document.getElementById('calendar-view-btn')) document.getElementById('calendar-view-btn')!.style.visibility = 'hidden';
+		let loaderContainer = document.getElementById('loader-container');
+		let searchFlightsBtn = document.getElementById('search-flights-btn');
+		let calendarViewBtn = document.getElementById('calendar-view-btn');
+		if (loaderContainer) loaderContainer.style.display = 'flex';
+		if (searchFlightsBtn) searchFlightsBtn.style.display = 'none';
+		if (calendarViewBtn) calendarViewBtn.style.visibility = 'hidden';
 	}
 
 	/**
 	 * Helper function to stop loading.
 	 */
 	function stopLoading() {
-		if (document.getElementById('loader-container')) document.getElementById('loader-container')!.style.display = 'none';
-		if (document.getElementById('search-flights-btn')) document.getElementById('search-flights-btn')!.style.display = 'block';
-		if (document.getElementById('calendar-view-btn')) document.getElementById('calendar-view-btn')!.style.visibility = 'visible';
+		let loaderContainer = document.getElementById('loader-container');
+		let searchFlightsBtn = document.getElementById('search-flights-btn');
+		let calendarViewBtn = document.getElementById('calendar-view-btn');
+		if (loaderContainer) loaderContainer.style.display = 'none';
+		if (searchFlightsBtn) searchFlightsBtn.style.display = 'block';
+		if (calendarViewBtn) calendarViewBtn.style.visibility = 'visible';
 	}
 
 	/**
@@ -134,7 +140,8 @@
 	 * @param {string} input Input field. Can take values 'origin' and 'destination'
 	 */
 	function autocompleteStartLoading(input: string) {
-		if (document.getElementById(`${input}-autocomplete-load`)) document.getElementById(`${input}-autocomplete-load`)!.style.display = 'block';
+		let autocompleteLoad = document.getElementById(`${input}-autocomplete-load`);
+		if (autocompleteLoad) autocompleteLoad.style.display = 'block';
 	}
 
 	/**
@@ -142,7 +149,8 @@
 	 * @param {string} input Input field. Can take values 'origin' and 'destination'
 	 */
 	function autocompleteStopLoading(input: string) {
-		if (document.getElementById(`${input}-autocomplete-load`)) document.getElementById(`${input}-autocomplete-load`)!.style.display = 'none';
+		let autocompleteLoad = document.getElementById(`${input}-autocomplete-load`);
+		if (autocompleteLoad) autocompleteLoad.style.display = 'none';
 	}
 
 	/**
@@ -154,14 +162,14 @@
 	function getFormData(forCalendar: boolean): FlightSearchForm {
 		let departureDate = new Date(flightDepartureDate);
 		let returnDate = new Date(flightReturnDate);
-    let formData: FlightSearchForm = {
-      origin: flightOrigin,
-      destination: flightDestination,
-      adults: parseInt(nbAdults),
-      class:  flightClass.toUpperCase().replace(' ', '_'),
-      departureDateFormatted: format(departureDate, 'yyyy-MM-dd'),
-      returnDateFormatted: format(returnDate, 'yyyy-MM-dd')
-    }
+		let formData: FlightSearchForm = {
+			origin: flightOrigin,
+			destination: flightDestination,
+			adults: parseInt(nbAdults),
+			class: flightClass.toUpperCase().replace(' ', '_'),
+			departureDateFormatted: format(departureDate, 'yyyy-MM-dd'),
+			returnDateFormatted: format(returnDate, 'yyyy-MM-dd')
+		};
 
 		if (forCalendar) {
 			departureDate = dateVerification(departureDate);
@@ -261,18 +269,18 @@
 	 * return date to the selected one.
 	 */
 	function departureDateSelected() {
-    let flightDepartureInput = document.getElementById('fs-flight-departure-date');
-    let flightReturnInput = document.getElementById('fs-flight-return-date');
+		let flightDepartureInput = document.getElementById('fs-flight-departure-date');
+		let flightReturnInput = document.getElementById('fs-flight-return-date');
 
-    let dateSelected: string;
-    let returnDate: string;
-    if (flightDepartureInput instanceof HTMLInputElement && flightReturnInput instanceof HTMLInputElement) {
-      dateSelected = flightDepartureInput.value;
-		  returnDate = flightReturnInput.value;
-    } else return;
+		let dateSelected: string;
+		let returnDate: string;
+		if (flightDepartureInput instanceof HTMLInputElement && flightReturnInput instanceof HTMLInputElement) {
+			dateSelected = flightDepartureInput.value;
+			returnDate = flightReturnInput.value;
+		} else return;
 
 		if (dateSelected) {
-			flightReturnInput!.setAttribute('min', dateSelected);
+			flightReturnInput.setAttribute('min', dateSelected);
 			if (returnDate && isAfter(new Date(dateSelected), new Date(returnDate))) {
 				flightReturnInput.value = dateSelected;
 			}
@@ -286,7 +294,10 @@
 	 * @returns {string} Output
 	 */
 	function formatString(str: string): string {
-		return str.split(' ').map((word) => (word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())).join(' ');
+		return str
+			.split(' ')
+			.map((word) => (word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()))
+			.join(' ');
 	}
 
 	/**
@@ -331,10 +342,10 @@
 			flightDestination = suggestion.iataCode;
 		}
 		let flightInput = document.getElementById(`fs-flight-${input}`);
-    if (flightInput instanceof HTMLInputElement) {
-      flightInput.value = `${suggestion.iataCode} - ${suggestion.cityName}`;
-		  flightInput.dispatchEvent(new Event('input'));
-    }
+		if (flightInput instanceof HTMLInputElement) {
+			flightInput.value = `${suggestion.iataCode} - ${suggestion.cityName}`;
+			flightInput.dispatchEvent(new Event('input'));
+		}
 	}
 
 	/**
@@ -343,12 +354,12 @@
 	 * @param {string} retDate New return date in the format 'yyyy-MM-dd'
 	 */
 	export function newDateSearch(depDate: string, retDate: string) {
-    let departureDateInput = document.getElementById('fs-flight-departure-date');
-    let returnDateInput = document.getElementById('fs-flight-return-date');
-    if (departureDateInput instanceof HTMLInputElement && returnDateInput instanceof HTMLInputElement) {
-      departureDateInput.value = depDate;
-		  returnDateInput.value = retDate;
-    }
+		let departureDateInput = document.getElementById('fs-flight-departure-date');
+		let returnDateInput = document.getElementById('fs-flight-return-date');
+		if (departureDateInput instanceof HTMLInputElement && returnDateInput instanceof HTMLInputElement) {
+			departureDateInput.value = depDate;
+			returnDateInput.value = retDate;
+		}
 		flightDepartureDate = depDate;
 		flightReturnDate = retDate;
 		flightSearch(true);
@@ -360,42 +371,44 @@
 	onMount(() => {
 		//Flight origin autocomplete event listeners
 		document.getElementById('fs-flight-origin')?.addEventListener('focus', () => {
-      let originItemsList = document.getElementById('origin-items-list');
+			let originItemsList = document.getElementById('origin-items-list');
 			if (originItemsList !== null) originItemsList.style.display = 'block';
 		});
 		document.getElementById('fs-flight-origin')?.addEventListener('focusout', () => {
 			setTimeout(() => {
 				let originItemsList = document.getElementById('origin-items-list');
-			  if (originItemsList !== null) originItemsList.style.display = 'none';
+				if (originItemsList !== null) originItemsList.style.display = 'none';
 			}, 200);
 		});
 		document.getElementById('fs-flight-origin')?.addEventListener('keydown', function () {
 			clearTimeout(originTimeout);
-      let flightOriginInput = this;
-      if (flightOriginInput instanceof HTMLInputElement) {
-        let flightOrigin = flightOriginInput.value;
-        originTimeout = window.setTimeout(() => searchSuggestion(flightOrigin, 'origin'), timeoutInterval);
-      }
+			if (this instanceof HTMLInputElement) {
+				let flightOrigin = this.value;
+				originTimeout = window.setTimeout(() => searchSuggestion(flightOrigin, 'origin'), timeoutInterval);
+			}
 		});
 
 		//Flight destination event listeners
 		document.getElementById('fs-flight-destination')?.addEventListener('focus', () => {
-      let destinationItemsList = document.getElementById('destination-items-list');
-      if (destinationItemsList !== null) destinationItemsList.style.display = 'block';
+			let destinationItemsList = document.getElementById('destination-items-list');
+			if (destinationItemsList !== null) destinationItemsList.style.display = 'block';
 		});
 		document.getElementById('fs-flight-destination')?.addEventListener('focusout', () => {
 			setTimeout(() => {
 				let destinationItemsList = document.getElementById('destination-items-list');
-      if (destinationItemsList !== null) destinationItemsList.style.display = 'none';
+				if (destinationItemsList !== null) destinationItemsList.style.display = 'none';
 			}, 200);
 		});
 		document.getElementById('fs-flight-destination')?.addEventListener('keydown', function () {
 			clearTimeout(destinationTimeout);
-      let flightDestinationInput = this;
-      if (flightDestinationInput instanceof HTMLInputElement) {
-        let flightDestination = flightDestinationInput.value;
-        destinationTimeout = window.setTimeout(() => searchSuggestion(flightDestination, 'destination'), timeoutInterval); 
-      }
+			this;
+			if (this instanceof HTMLInputElement) {
+				let flightDestination = this.value;
+				destinationTimeout = window.setTimeout(
+					() => searchSuggestion(flightDestination, 'destination'),
+					timeoutInterval
+				);
+			}
 		});
 	});
 </script>
@@ -405,11 +418,7 @@
 		<Col cols={12} lg={11}>
 			<Menu bind:active={flightOneWayRoundtripMenuActive}>
 				<div slot="activator">
-					<Button
-						class="upper-menu-button"
-						text
-						style={classMenuActive ? `color: ${AMADEUS_BLUE}` : ''}
-					>
+					<Button class="upper-menu-button" text style={classMenuActive ? `color: ${AMADEUS_BLUE}` : ''}>
 						<Icon path={mdiMenuDown} rotate={flightOneWayRoundtripMenuActive ? 180 : 0} />
 						{flightOneWayRoundtrip}
 					</Button>
@@ -421,11 +430,7 @@
 			</Menu>
 			<Menu bind:active={classMenuActive}>
 				<div slot="activator">
-					<Button
-						text
-						class="upper-menu-button"
-						style={classMenuActive ? `color: ${AMADEUS_BLUE}` : ''}
-					>
+					<Button text class="upper-menu-button" style={classMenuActive ? `color: ${AMADEUS_BLUE}` : ''}>
 						<Icon path={mdiMenuDown} rotate={classMenuActive ? 180 : 0} />
 						{flightClass}
 					</Button>
@@ -448,8 +453,7 @@
 						class="fs-text-field"
 						color={AMADEUS_BLUE}
 						bind:value={originInput}
-						rules={originRules}
-					>
+						rules={originRules}>
 						<div slot="append" id="origin-autocomplete-load">
 							<Icon>
 								<ProgressCircular indeterminate color={AMADEUS_BLUE} />
@@ -481,8 +485,7 @@
 						class="fs-text-field"
 						color={AMADEUS_BLUE}
 						bind:value={destinationInput}
-						rules={destinationRules}
-					>
+						rules={destinationRules}>
 						<div slot="append" id="destination-autocomplete-load">
 							<Icon>
 								<ProgressCircular indeterminate color={AMADEUS_BLUE} />
@@ -516,8 +519,7 @@
 				on:change={departureDateSelected}
 				rules={departureDateRules}
 				bind:value={flightDepartureDate}>Departure</TextField
-			></Col
-		>
+			></Col>
 		<Col cols={5} sm={5} lg={2}
 			><TextField
 				id="fs-flight-return-date"
@@ -526,8 +528,7 @@
 				type="date"
 				rules={returnDateRules}
 				bind:value={flightReturnDate}>Return</TextField
-			></Col
-		>
+			></Col>
 		<Col cols={2} sm={2} lg={1}
 			><TextField
 				id="fs-adults"
@@ -536,15 +537,13 @@
 				color={AMADEUS_BLUE}
 				rules={adultsRules}
 				bind:value={nbAdults}>Adults</TextField
-			></Col
-		>
+			></Col>
 		<Col cols={12} sm={12} lg={12} class="d-flex justify-center">
 			<Button
 				class="white-text search-btn"
 				id="search-flights-btn"
 				disabled={!searchActive}
-				on:click={() => flightSearch(false)}>Search</Button
-			>
+				on:click={() => flightSearch(false)}>Search</Button>
 		</Col>
 	</Row>
 	<div class="d-flex justify-center" id="loader-container" style="display: none">

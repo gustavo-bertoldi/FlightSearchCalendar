@@ -3,6 +3,7 @@ steps:
   dir: './front'
   env: 
   - 'PORT=8080'
+  - 'HOST=0.0.0.0'
   args: ['build', '-t', 'europe-west2-docker.pkg.dev/$PROJECT_ID/fs-front/$COMMIT_SHA', '.']
 
 - name: 'gcr.io/cloud-builders/docker'

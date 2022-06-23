@@ -1,26 +1,17 @@
 <script lang="ts">
 	import { mdiAirplaneTakeoff, mdiAirplaneLanding, mdiClockTimeFourOutline } from '@mdi/js';
-import type { FlightOffer } from 'src/@types';
+	import type { FlightOffer } from 'src/@types';
 	import { createEventDispatcher } from 'svelte';
-	import {
-		MaterialApp,
-		Row,
-		Col,
-		ExpansionPanel,
-		ExpansionPanels,
-		Icon,
-		Button,
-		Divider
-	} from 'svelte-materialify';
+	import { MaterialApp, Row, Col, ExpansionPanel, ExpansionPanels, Icon, Button, Divider } from 'svelte-materialify';
 
 	let chosenOffer: FlightOffer;
-  let offerSet: boolean = false;
+	let offerSet = false;
 	const dispatch = createEventDispatcher();
 
 	export function setChosenOffer(data: FlightOffer) {
 		chosenOffer = data;
-    offerSet = true;
-    let tripView = document.getElementById('trip-view');
+		offerSet = true;
+		let tripView = document.getElementById('trip-view');
 		if (tripView) tripView.style.display = 'flex';
 	}
 
@@ -30,10 +21,10 @@ import type { FlightOffer } from 'src/@types';
 		offerSet = false;
 	}
 
-  function carrierImgErrorHandler(this: HTMLImageElement) {
-    this.onerror = null;
+	function carrierImgErrorHandler(this: HTMLImageElement) {
+		this.onerror = null;
 		this.src = 'airplane-tail.png';
-  }
+	}
 
 	function changeFlights() {
 		resetChosenOffer();
@@ -45,18 +36,13 @@ import type { FlightOffer } from 'src/@types';
 	<div class="d-flex flex-column" id="trip-view">
 		{#if offerSet}
 			<div class="d-flex justify-space-between pb-3">
-				<span style="font-size: 24px;">Your trip to <b>{chosenOffer.outbound.arrivalAirport}</b></span
-				>
+				<span style="font-size: 24px;">Your trip to <b>{chosenOffer.outbound.arrivalAirport}</b></span>
 				<span style="font-size: 24px;"><b>{chosenOffer.inbounds[0].priceFormatted}</b></span>
 			</div>
 			<Divider />
 			<div class="change-flights d-flex justify-space-between align-center">
-				<span style="font-size: 18px; padding: 20px 0px;"
-					>Departing on {chosenOffer.outbound.departureDate}</span
-				>
-				<Button class="change-flights-btn" text on:click={() => changeFlights()}
-					>Change flights</Button
-				>
+				<span style="font-size: 18px; padding: 20px 0px;">Departing on {chosenOffer.outbound.departureDate}</span>
+				<Button class="change-flights-btn" text on:click={() => changeFlights()}>Change flights</Button>
 			</div>
 			<ExpansionPanels class="outbound-flight">
 				<ExpansionPanel>
@@ -67,8 +53,7 @@ import type { FlightOffer } from 'src/@types';
 									src={`https://s1.apideeplink.com/images/airlines/${chosenOffer.validatingAirline}.png`}
 									on:error={carrierImgErrorHandler}
 									alt="Carrier logo"
-									style="width: inherit;"
-								/>
+									style="width: inherit;" />
 							</Col>
 							<Col cols={6} lg={5} class="d-flex flex-column align-center">
 								<span class="flight-upper-row flight-row">
@@ -122,9 +107,7 @@ import type { FlightOffer } from 'src/@types';
 					</Row>
 				</ExpansionPanel>
 			</ExpansionPanels>
-			<span style="font-size: 18px; padding: 20px 0px;"
-				>Returning on {chosenOffer.inbounds[0].departureDate}</span
-			>
+			<span style="font-size: 18px; padding: 20px 0px;">Returning on {chosenOffer.inbounds[0].departureDate}</span>
 			<ExpansionPanels class="inbound-flight">
 				<ExpansionPanel>
 					<span style="width: 100%" slot="header">
@@ -134,14 +117,12 @@ import type { FlightOffer } from 'src/@types';
 									src={`https://s1.apideeplink.com/images/airlines/${chosenOffer.validatingAirline}.png`}
 									on:error={carrierImgErrorHandler}
 									alt="Carrier logo"
-									style="width: inherit;"
-								/>
+									style="width: inherit;" />
 							</Col>
 							<Col cols={6} lg={5} class="d-flex flex-column align-center">
 								<span class="flight-upper-row flight-row">
 									<Icon class="flight-row-icon" size="25px" path={mdiAirplaneTakeoff} />
-									{chosenOffer.inbounds[0].departureAirport} &bull; {chosenOffer.inbounds[0]
-										.departureTime}
+									{chosenOffer.inbounds[0].departureAirport} &bull; {chosenOffer.inbounds[0].departureTime}
 								</span>
 								<span class="flight-bottom-row flight-row">
 									<Icon class="flight-row-icon" size="25px" path={mdiAirplaneLanding} />
@@ -153,8 +134,7 @@ import type { FlightOffer } from 'src/@types';
 									<Icon class="flight-row-icon" size="25px" path={mdiClockTimeFourOutline} />
 									{chosenOffer.inbounds[0].duration}
 								</span>
-								<span class="flight-bottom-row flight-stops-row">{chosenOffer.inbounds[0].stops}</span
-								>
+								<span class="flight-bottom-row flight-stops-row">{chosenOffer.inbounds[0].stops}</span>
 							</Col>
 						</Row>
 					</span>
