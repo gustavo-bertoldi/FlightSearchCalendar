@@ -22,8 +22,20 @@ steps:
   - '--region'
   - 'europe-west2'
 
+- name: 'gcr.io/cloud-builders/docker'
+  dir: './back'
+  env: 
+  - 'CORS_ALLOW=https://fs-front-u6o6sehtja-nw.a.run.app/'
+  - 'PORT=3000'
+  args: ['build', '-t', 'europe-west2-docker.pkg.dev/$PROJECT_ID/fs-back/$COMMIT_SHA', '.']
+
+- name: 'gcr.io/cloud-builders/docker'
+  dir: './back'
+  args: ['push', 'europe-west2-docker.pkg.dev/$PROJECT_ID/fs-back/$COMMIT_SHA']
+
 images:
 - europe-west2-docker.pkg.dev/$PROJECT_ID/fs-front/$COMMIT_SHA
+- europe-west2-docker.pkg.dev/$PROJECT_ID/fs-back/$COMMIT_SHA
 
 options:
   logging: CLOUD_LOGGING_ONLY
