@@ -24,11 +24,7 @@ steps:
 
 - name: 'gcr.io/cloud-builders/docker'
   dir: './back'
-  env: 
-  - 'CORS_ALLOW=https://fs-front-u6o6sehtja-nw.a.run.app/'
-  - 'PORT=3000'
-  secretEnv: ['AMADEUS_CLIENT_ID', 'AMADEUS_CLIENT_SECRET']
-  args: ['build', '-t', 'europe-west2-docker.pkg.dev/$PROJECT_ID/fs-back/$COMMIT_SHA', '--build-args=AMADEUS_CLIENT_ID=$$AMADEUS_CLIENT_ID,AMADEUS_CLIENT_SECRET=$$AMADEUS_CLIENT_SECRET,PORT=$$PORT,CORS_ALLOW=$$CORS_ALLOW', '.']
+  args: ['build', '-t', 'europe-west2-docker.pkg.dev/$PROJECT_ID/fs-back/$COMMIT_SHA', '.']
 
 - name: 'gcr.io/cloud-builders/docker'
   dir: './back'
@@ -47,13 +43,6 @@ steps:
   - 'europe-west2'
   - '--port'
   - '3000'
-
-availableSecrets:
-  secretManager:
-  - versionName: projects/$PROJECT_ID/secrets/AMADEUS_CLIENT_ID/versions/latest
-    env: 'AMADEUS_CLIENT_ID'
-  - versionName: projects/$PROJECT_ID/secrets/AMADEUS_CLIENT_SECRET/versions/latest
-    env: 'AMADEUS_CLIENT_SECRET'
 
 images:
 - europe-west2-docker.pkg.dev/$PROJECT_ID/fs-front/$COMMIT_SHA
