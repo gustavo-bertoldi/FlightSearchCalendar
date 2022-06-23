@@ -45,6 +45,8 @@ steps:
   - '3000'
   - '--set-secrets'
   - 'AMADEUS_CLIENT_ID=AMADEUS_CLIENT_ID:latest,AMADEUS_CLIENT_SECRET=AMADEUS_CLIENT_SECRET:latest'
+  - '--update-env-vars'
+  - 'ENV=GCLOUD'
 
 images:
 - europe-west2-docker.pkg.dev/$PROJECT_ID/fs-front/$COMMIT_SHA
