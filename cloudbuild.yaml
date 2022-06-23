@@ -28,7 +28,7 @@ steps:
   - 'CORS_ALLOW=https://fs-front-u6o6sehtja-nw.a.run.app/'
   - 'PORT=3000'
   secretEnv: ['AMADEUS_CLIENT_ID', 'AMADEUS_CLIENT_SECRET']
-  args: ['build', '-t', 'europe-west2-docker.pkg.dev/$PROJECT_ID/fs-back/$COMMIT_SHA', '.']
+  args: ['build', '-t', 'europe-west2-docker.pkg.dev/$PROJECT_ID/fs-back/$COMMIT_SHA', '--build-args=AMADEUS_CLIENT_ID=$$AMADEUS_CLIENT_ID,AMADEUS_CLIENT_SECRET=$$AMADEUS_CLIENT_SECRET,PORT=$$PORT,CORS_ALLOW=$$CORS_ALLOW', '.']
 
 - name: 'gcr.io/cloud-builders/docker'
   dir: './back'
