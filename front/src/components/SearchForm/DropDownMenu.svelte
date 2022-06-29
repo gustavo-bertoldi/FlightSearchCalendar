@@ -2,12 +2,12 @@
   import { Button, Menu, Icon, List, ListItem } from "svelte-materialify";
   import { mdiMenuDown } from '@mdi/js'
 
-  const AMADEUS_BLUE = 'rgb(0,94,184)';
-
-  let active: boolean;
   export let value: string = 'Roundtrip';
   export let options: string[];
 
+  const AMADEUS_BLUE = 'rgb(0,94,184)';
+
+  let active: boolean;
 
 </script>
 

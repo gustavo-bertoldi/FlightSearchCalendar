@@ -4,7 +4,7 @@ const addDays = require('date-fns/addDays')
 const bodyParser = require('body-parser');
 const url = require('url');
 const Amadeus = require('amadeus');
-const { isThisQuarter } = require('date-fns');
+const { isThisQuarter, isBefore } = require('date-fns');
 require('dotenv/config');
 
 //Load server parameters
@@ -75,9 +75,7 @@ function formatDuration(str) {
  * @returns {string} Output
  */
 function formatString(str) {
-  str = str.split(' ');
-  str = str.map(word => word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
-  return str.join(' ');
+  return str.split(/[ -]/).map(word => word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
 }
 
 function sameOutbound(it1, it2) {
@@ -98,24 +96,33 @@ function getCheapestDates(origin, destination, departureDate, returnDate, adults
   return new Promise(async (resolve, reject) => {
     let depDate = new Date(departureDate);
     let retDate = new Date(returnDate);
-    let flights = {};
+    let flights = [];
     let responseCount = 0;
     let errorCount = 0;
 
     await wait(waitTime);
 
     for (let i = -3; i <= 3; i++) {
-      let currentDepDate = format(addDays(depDate, i), 'yyyy-MM-dd');
+      let currentDepartureDate = addDays(depDate, i);
+      let currentDepartures = {
+        date: format(currentDepartureDate, 'yyyy-MM-dd'),
+        dateFormatted: format(currentDepartureDate, 'dd/MM/yyyy'),
+        returns: []
+      }
+      flights.push(currentDepartures);
 
       for (let j = -3; j <= 3; j++) {
-        let currentRetDate = format(addDays(retDate, j), 'yyyy-MM-dd');
-        let datepair = `${currentDepDate.toString()}>${currentRetDate.toString()}`
+        let currentReturnDate = addDays(retDate, j);
+        let currentReturns = {
+          date: format(currentReturnDate, 'yyyy-MM-dd'),
+          dateFormatted: format(currentReturnDate, 'dd/MM/yyyy')
+        }
 
         amadeus.shopping.flightOffersSearch.get({
           originLocationCode: origin,
           destinationLocationCode: destination,
-          departureDate: currentDepDate,
-          returnDate: currentRetDate,
+          departureDate: currentDepartures.date,
+          returnDate: currentReturns.date,
           adults: adults,
           max: 1,
           travelClass: travelClass
@@ -124,15 +131,19 @@ function getCheapestDates(origin, destination, departureDate, returnDate, adults
             style: 'currency',
             currency: response.data[0].price.currency
           });
-          flights[datepair] = currencyFormatter.format(response.data[0].price.total);
+          currentReturns.price = parseFloat(response.data[0].price.total);
+          currentReturns.priceFormatted = currencyFormatter.format(response.data[0].price.total);
         }).catch((err) => {
           errorCount++;
-          flights[datepair] = 'error';
           console.error(`Get cheapest dates. Error ${err.response.statusCode} - ${err.description[0].title}`);
           if (err.response.statusCode != 429) reject(err);
         }).finally(() => {
           responseCount++;
+          currentDepartures.returns.push(currentReturns);
           if (responseCount == 49) {
+            //Sort the arrays by date
+            flights.sort((a, b) =>  (new Date(a.date) - new Date(b.date)));
+            flights.forEach(dep => dep.returns.sort((a, b) => (new Date(a.date) - new Date(b.date))));
             console.log(`Request completed with ${responseCount - errorCount} successes and ${errorCount} errors.`)
             resolve(flights);
           }
@@ -177,10 +188,13 @@ function getCheapestDatepairs(origin, destination, adults, datepairs, travelClas
           style: 'currency',
           currency: response.data[0].price.currency
         });
-        flights[datepair] = currencyFormatter.format(response.data[0].price.total);
+        flights[datepair] = {
+          price: parseFloat(response.data[0].price.total),
+          priceFormatted: currencyFormatter.format(response.data[0].price.total)
+        };
       }).catch((err) => {
         errorCount++;
-        flights[datepair] = 'error';
+        flights[datepair] = {};
       }).finally(() => {
         responseCount++;
         if (responseCount == expectedResponses) {
@@ -205,8 +219,8 @@ function getSearchSuggestions(keyword) {
       let suggestions = response.result.data.map(entry => {
         return {
           iataCode: entry.iataCode,
-          name: entry.name,
-          cityName: entry.address.cityName
+          name: formatString(entry.name),
+          cityName: formatString(entry.address.cityName)
         }
       });
       resolve(suggestions);

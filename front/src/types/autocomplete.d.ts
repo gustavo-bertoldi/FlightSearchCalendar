@@ -11,3 +11,5 @@ export type AutocompleteSuggestions = {
 };
 
 export type AutocompleteInput = 'origin' | 'destination';
+
+export type InputRule = ((v: string) => string | true);

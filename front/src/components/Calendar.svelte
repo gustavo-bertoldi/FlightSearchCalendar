@@ -1,44 +1,71 @@
 <script lang="ts">
-	import { onMount, getContext, tick, createEventDispatcher } from 'svelte';
+	import { onMount, tick, createEventDispatcher } from 'svelte';
 	import { format, addDays, isAfter, isBefore } from 'date-fns';
 	import { ProgressCircular, Icon, Button } from 'svelte-materialify';
-	import {
-		mdiArrowLeftBold,
-		mdiArrowRightBold,
-		mdiArrowUpBold,
-		mdiArrowDownBold,
-		mdiCalendar,
-		mdiClose
-	} from '@mdi/js';
-	import type { CalendarData, CalendarScrollDirection, CalendarScrollType } from '$types/calendar';
+	import { mdiArrowLeftBold, mdiArrowRightBold, mdiArrowUpBold, mdiArrowDownBold, mdiCalendar, mdiClose, mdiAccessPoint } from '@mdi/js';
+	import type { CalendarDate, CalendarPrice, CalendarPrices, CalendarScrollDirection, CalendarScrollType, Datepair, DateString, DateStringFormatted } from '$types/calendar';
+  import { CONSTANTS } from '$stores/constants';
+  import { calendarData } from '$stores/calendar-data';
+  import PriceCell from './Calendar/PriceCell.svelte';
+  import DateCell from './Calendar/DateCell.svelte';
+  import { departureDate, returnDate, origin, destination, adults, flightClass } from '$stores/flight-info';
+  import DateField from './SearchForm/DateField.svelte';
 
-	const API_URL = getContext('API_URL');
+  let visible: boolean = true;
 
-	let dispatch = createEventDispatcher();
-	let origin: string;
-	let destination: string;
-	let adults: string;
-	let departureDate: Date;
-	let returnDate: Date;
-	let selectedDepartureDate: string;
-	let selectedReturnDate: string;
-	let travelClass: string;
+  let calendar: CalendarPrices;
+  calendarData.subscribe(newData => {
+    calendar = newData.reduce<CalendarPrices>((acc, cur) => {
+      cur.returns.forEach(ret => {
+        acc[`${cur.date}>${ret.date}`] = {price: ret.price, priceFormatted: ret.priceFormatted};
+      });
+      return acc;
+    }, {});
+  });
 
-	/**
-	 * Data used to build the calendar
-	 * @property {string[]} calendarData.departures Array with all departure dates current taken into account by the calendar (yyyy-MM-dd)
-	 * @property {string[]} calendarData.returns Array with all return dates current taken into account by the calendar (yyyy-MM-dd)
-	 * @property {object} calendarData.prices Map from datepairs in the format 'departure>arrival' to theirs prices
-	 * @property {number} calendarData.maxPrice Current maximum price in calendar shown datepairs
-	 * @property {number} calendarData.minPrice Current minimum price in calendar shown datepairs
-	 */
-	let calendarData: CalendarData = {
-		departures: [],
-		returns: [],
-		prices: {},
-		maxPrice: 0,
-		minPrice: Infinity
-	};
+  let currentDepartureDate = $departureDate as DateString;
+  let currentReturnDate = $returnDate as DateString;
+  let currentDepartureDates: CalendarDate[];
+  let currentReturnDates: CalendarDate[];
+  departureDate.subscribe(value => {
+    currentDepartureDate = value as DateString;
+    currentDepartureDates = datesArray(value as DateString);
+  });
+  returnDate.subscribe(value => {
+    currentReturnDate = value as DateString;
+    currentReturnDates = datesArray(value as DateString);
+  });
+
+  $: currentPrices = Object.entries(calendar).filter(x => {
+      let [departure, _return] = parseDatepair(x[0] as Datepair);
+      return (x[1].price 
+        && currentDepartureDates.filter(x => x.date === departure).length > 0
+        && currentReturnDates.filter(x => x.date === _return).length > 0);
+    }).map(x => x[1].price!);
+  $: minPrice = Math.min(...currentPrices);
+  $: maxPrice = Math.max(...currentPrices);
+
+
+  let dispatcher = createEventDispatcher();
+
+  function datesArray(current?: DateString): CalendarDate[] {
+    if (!current) return [];
+    let array: CalendarDate[] = [];
+    for (let i = -3; i <= 3; i++) {
+      let newDate = addDays(new Date(current), i);
+      array.push({
+        date: format(newDate, 'yyyy-MM-dd') as DateString,
+        dateFormatted: format(newDate, 'dd/MM/yyyy') as DateStringFormatted
+      });
+    }
+    return array;
+  }
+
+  function parseDatepair(datepair: Datepair): [DateString, DateString] {
+    let departure = datepair.substring(0, 10) as DateString;
+    let _return = datepair.substring(11) as DateString;
+    return [departure, _return];
+  }
 
 	/**
 	 * Listens to the search event from the FlightSearch component to receive search parameters.
@@ -49,6 +76,7 @@
 	 * @property {string} data.destinationCity
 	 * @property {boolean} data.datesChange True if only dates changed for the request (calendar click)
 	 */
+  /*
 	export function flightSearchListener(data: any) {
 		departureDate = new Date(data.departureDate);
 		returnDate = new Date(data.returnDate);
@@ -59,19 +87,13 @@
 		selectedReturnDate = data.selectedReturnDate;
 		travelClass = data.travelClass;
 		createFlightCalendar(data.flights);
-	}
+	}*/
 
 	/**
 	 * Resets calendar data and hide it. Used when a new search is fired
 	 */
 	export function resetCalendar() {
-		calendarData = {
-			departures: [],
-			returns: [],
-			prices: {},
-			maxPrice: 0,
-			minPrice: Infinity
-		};
+		calendarData.set([]);
 		hideCalendar();
 		hideCalendarButton();
 	}
@@ -81,49 +103,58 @@
 	 * @param {CalendarScrollDirection} direction 1 to go forward -1 to go back
 	 * @param {CalendarScrollType} type 'departures' for scrolling departure dates or 'returns' for scrolling return dates
 	 */
-	function scrollDate(direction: CalendarScrollDirection, type: CalendarScrollType) {
-		let newDateIndex = direction == 1 ? 6 : 0;
-		let newDate = addDays(new Date(calendarData[type][newDateIndex]), direction);
 
-		if (type == 'departures' && direction == 1) {
-			let firstRetDate = new Date(calendarData.returns[0]);
-			if (isAfter(newDate, firstRetDate)) return;
-		} else if (type == 'returns' && direction == -1) {
-			let lastDepDate = new Date(calendarData.departures[6]);
-			if (isBefore(newDate, lastDepDate)) return;
+	function scrollDate(direction: CalendarScrollDirection, type: CalendarScrollType) {    
+		let currentDate = type === 'departure' ? new Date(currentDepartureDate) : new Date(currentReturnDate);
+		let newCurrentDate = addDays(currentDate, direction);
+    let newBorderDate = addDays(newCurrentDate, 3*direction);
+
+		if (type == 'departure' && direction == 1) {
+			let firstRetDate = addDays(currentDate, -3);
+			if (isAfter(newBorderDate, firstRetDate)) return;
+		} else if (type == 'return' && direction == -1) {
+			let lastDepDate = addDays(currentDate, 3);
+			if (isBefore(newBorderDate, lastDepDate)) return;
 		} else if (direction == -1) {
 			let today = new Date();
-			if (isBefore(newDate, today)) return;
+			if (isBefore(newBorderDate, today)) return;
 		}
 
-		//Update calendar with new dates
-		calendarData[type] = calendarData[type].map((date) =>
-			format(addDays(new Date(date), direction), 'yyyy-MM-dd')
-		);
+    //Update current date
+    let newDatepairs: Datepair[];
+    let newCurrentDateFormatted = format(newCurrentDate, 'yyyy-MM-dd') as DateString;
+    let newBorderDateFormatted = format(newBorderDate, 'yyyy-MM-dd') as DateString;
+    if (type === 'departure') {
+      currentDepartureDate = newCurrentDateFormatted;
+      currentDepartureDates = datesArray(currentDepartureDate);
+      newDatepairs = currentReturnDates.map<Datepair>(x => `${newBorderDateFormatted}>${x.date}`);
+    }
+    else {
+      currentReturnDate = newCurrentDateFormatted;
+      currentReturnDates = datesArray(currentReturnDate);
+      newDatepairs = currentDepartureDates.map<Datepair>(x => `${x.date}>${newBorderDateFormatted}`);
+    }
 
-		//Create array with datepairs to search price
-		let toCompleteArray = type == 'departures' ? calendarData.returns : calendarData.departures;
-		let newDateFormatted = format(newDate, 'yyyy-MM-dd');
-		let newDatepairs = toCompleteArray.map((date) =>
-			type == 'departures' ? `${newDateFormatted}>${date}` : `${date}>${newDateFormatted}`
-		);
-		fetchNewPrices(newDatepairs);
+    //Remove prices already fetched
+    console.log(newDatepairs)
+    newDatepairs = newDatepairs.filter(x => !calendar.hasOwnProperty(x));
+		if (newDatepairs.length > 0) fetchNewPrices(newDatepairs);
+       
 	}
 
 	/**
 	 * Fetch prices corresponding to new datepairs after scrolling
 	 * @param {string[]} newDatepairs Datepairs in the format 'departure>return' (yyyy-MM-dd)
 	 */
-	function fetchNewPrices(newDatepairs: string[]) {
-		let datepairsFiltered = newDatepairs.filter((datepair) => !calendarData.prices[datepair]);
-
-		const url = `${API_URL}/flights-for-datepairs`;
+  
+	function fetchNewPrices(newDatepairs: Datepair[]) {
+		const url = `${$CONSTANTS.API_URL}/flights-for-datepairs`;
 		const data = {
-			datepairs: datepairsFiltered,
-			origin: origin,
-			destination: destination,
-			adults: adults,
-			travelClass: travelClass
+			datepairs: newDatepairs,
+			origin: $origin,
+			destination: $destination,
+			adults: $adults,
+			travelClass: $flightClass
 		};
 		const options = {
 			method: 'POST',
@@ -134,15 +165,21 @@
 
 		fetch(request)
 			.then((response) => response.json())
-			.then(async (flights) => await addPricesToCalendar(flights))
-			.catch((err) => dispatch('error'));
+			.then((prices: CalendarPrices) => {
+        Object.keys(prices).forEach(datepair => {
+          calendar[datepair as Datepair] = prices[datepair as Datepair];
+        })
+      })
+			.catch((err) => dispatcher('error'));
 	}
+  
 
 	/**
 	 * Add prices received in the flights object to the calendar
 	 * @param {object} flights Map of a datepair in the format 'departure>return' to an object containing the
 	 * cheapest flight information for the datepair
 	 */
+  /*
 	async function addPricesToCalendar(flights: any) {
 		Object.keys(flights).forEach((datepair) => {
 			if (flights[datepair] != 'error') {
@@ -162,12 +199,13 @@
 		});
 		await tick();
 		calculateNewPriceBorders();
-	}
+	}*/
 
 	/**
 	 * Called by the flight search listener to build the calendar based on the data received by the backend
 	 * @param flights
 	 */
+  /*
 	function createFlightCalendar(flights: any) {
 		let departures: string[] = [];
 		let returns: string[] = [];
@@ -181,11 +219,12 @@
 		calendarData.departures = departures;
 		calendarData.returns = returns;
 		addPricesToCalendar(flights);
-	}
+	}*/
 
 	/**
 	 * Recalculates new maximum and minimum prices based on flights received for the new datepairs
 	 */
+  /*
 	function calculateNewPriceBorders() {
 		let prices: { [index: string]: HTMLSpanElement[] } = {};
 		document
@@ -202,7 +241,7 @@
 		let min = Math.min(...allPrices);
 		calendarData.minPrice = Math.round((min + Number.EPSILON) * 100) / 100;
 		if (max != min) calendarData.maxPrice = Math.round((max + Number.EPSILON) * 100) / 100;
-	}
+	}*/
 
 	/**
 	 * Helper function to show the calendar, its close button and hide the view calendar button
@@ -251,6 +290,7 @@
 	 * and recenters the calendar to the chosen date.
 	 * @param {Event} event Click event captured by the element. Allow to retrieve the element's data
 	 */
+  /*
 	function dateClicked(event: Event) {
 		let eventTarget = event.currentTarget;
 		let depDate;
@@ -286,7 +326,7 @@
 				}
 			}
 		} else return;
-	}
+	}*/
 
 	onMount(() => {
 		//Set dynamic style properties
@@ -297,9 +337,8 @@
 </script>
 
 <div class="control-panel d-flex justify-end">
-	<Button class="white-text" id="calendar-view-btn" on:click={showCalendar} style="display: none;"
-		><Icon path={mdiCalendar} class="mr-3" />Calendar View</Button
-	>
+	<Button class="white-text" id="calendar-view-btn" on:click={showCalendar}>
+    <Icon path={mdiCalendar} class="mr-3" />Calendar View</Button>
 	<Button
 		class="red white-text"
 		id="calendar-close-btn"
@@ -307,86 +346,56 @@
 		style="display: none;"><Icon size="15px" path={mdiClose} class="mr-3" />Close</Button
 	>
 </div>
+{#if visible}
 <div class="main-container">
 	<div class="departure-date-control arrow-controls">
-		<div on:click={() => scrollDate(-1, 'departures')}>
+		<div on:click={() => scrollDate(-1, 'departure')}>
 			<Icon size="35px" path={mdiArrowLeftBold} />
 		</div>
-		<div on:click={() => scrollDate(1, 'departures')}>
+		<div on:click={() => scrollDate(1, 'departure')}>
 			<Icon size="35px" path={mdiArrowRightBold} />
 		</div>
 	</div>
 	<div style="display: flex; justify-content: space-between;">
-		<div class="calendar-container" style="--cols: 8">
-			{#each Array(8) as _, i}
-				{#each Array(8) as _, j}
-					{#if i == 0 || j == 7}
-						{@const depDate = calendarData.departures[j]
-							? format(new Date(calendarData.departures[j]), 'dd/MM/yyyy')
-							: ''}
-						{@const retDate = calendarData.returns[i - 1]
-							? format(new Date(calendarData.returns[i - 1]), 'dd/MM/yyyy')
-							: ''}
-						{@const date = i == 0 && j != 7 ? depDate : retDate || ''}
-						{@const classes =
-							`calendar-item calendar-date` +
-							`${i == 0 && j != 7 ? ' departure-date' : ''}` +
-							`${i != 0 && j == 7 ? ' return-date' : ''}` +
-							`${i == 0 && j == 7 ? ' top-right-corner' : ''}` +
-							`${i == 0 && j == 0 ? ' top-left-corner' : ''}` +
-							`${i == 7 && j == 7 ? ' bottom-right-corner' : ''}`}
-						<div class={classes}>
-							<span class="calendar-item-text">{date}</span>
-						</div>
-					{:else}
-						{@const datepair = calendarData.departures[j] + '>' + calendarData.returns[i - 1]}
-						{@const priceObj = calendarData.prices[datepair] ? calendarData.prices[datepair] : {price: -1, priceFormatted: 'error'}}
-						{@const classes =
-							`calendar-item calendar-price` +
-							`${priceObj.price == calendarData.minPrice ? ' cheapest' : ''}` +
-							`${priceObj.price == calendarData.maxPrice ? ' expensive' : ''}` +
-							`${priceObj.priceFormatted == 'N/A' ? ' na-price' : ''}` +
-							`${priceObj.price === -1 ? ' loading' : ''}` +
-							`${i == 7 && j == 0 ? ' bottom-left-corner' : ''}` +
-							`${
-								selectedDepartureDate &&
-								selectedDepartureDate == calendarData.departures[j] &&
-								selectedReturnDate == calendarData.returns[i - 1]
-									? ' selected-dates'
-									: ''
-							}`}
-						{@const relY = i - 4}
-						{@const relX = j - 3}
-						<div
-							class={classes}
-							data-departure={calendarData.departures[j]}
-							data-return={calendarData.returns[i - 1]}
-							data-relx={relX}
-							data-rely={relY}
-							on:click={(e) => dateClicked(e)}
-						>
-							{#if priceObj.price !== -1}
-								<span class="calendar-item-text" data-price={priceObj.price}
-									>{priceObj.priceFormatted}</span
-								>
-							{:else}
-								<ProgressCircular indeterminate color="rgb(0,94,184)" />
-							{/if}
-						</div>
-					{/if}
-				{/each}
-			{/each}
+		<div class="calendar-container">
+      {#each currentDepartureDates as departureDate, i}
+        <DateCell topLeftCorner={i === 0}>{departureDate.dateFormatted}</DateCell>
+        {#if i === 6}
+          <DateCell topRightCorner></DateCell>
+        {/if}
+      {/each}
+      {#each currentReturnDates as returnDate, i}
+        {#each currentDepartureDates as departureDate, j}
+          {@const price = calendar[`${departureDate.date}>${returnDate.date}`]}
+          <PriceCell
+            cheap={price?.price === minPrice}
+            expensive={price?.price === maxPrice}
+            departureDate={departureDate.date}
+            returnDate={returnDate.date}
+            relX={j - 3}
+            relY={i - 3}
+            naPrice={!price?.priceFormatted}
+            loading={!price}
+            
+          >
+            {price?.priceFormatted || 'N/A'}
+          </PriceCell>
+        {/each} 
+        <DateCell bottomRightCorner={i === 6}>{returnDate.dateFormatted}</DateCell>
+      {/each}
+		
 		</div>
 		<div class="return-date-control arrow-controls">
-			<div on:click={() => scrollDate(-1, 'returns')}>
+			<div on:click={() => scrollDate(-1, 'return')}>
 				<Icon size="35px" path={mdiArrowUpBold} />
 			</div>
-			<div on:click={() => scrollDate(1, 'returns')}>
+			<div on:click={() => scrollDate(1, 'return')}>
 				<Icon size="35px" path={mdiArrowDownBold} />
 			</div>
 		</div>
 	</div>
 </div>
+{/if}
 
 <style>
 	:root {
@@ -405,6 +414,7 @@
 		--price-color: rgb(0, 53, 102);
 		--cheap-price-color: rgb(0, 85, 41);
 		--expensive-price-color: rgb(124, 0, 54);
+    --cols: 8
 	}
 
 	div.main-container {
@@ -420,120 +430,6 @@
 		width: 97%;
 		overflow-x: auto;
 		border-radius: 15px;
-	}
-
-	div.calendar-item {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		height: 50px;
-	}
-
-	div.calendar-item.calendar-date {
-		background-color: var(--calendar-dates);
-	}
-
-	div.calendar-item.calendar-price {
-		background-color: var(--calendar-prices);
-	}
-
-	div.calendar-item.calendar-price:hover {
-		cursor: pointer;
-		background-color: var(--calendar-hover);
-	}
-
-	div.calendar-item.calendar-price.loading {
-		background-color: var(--calendar-loading);
-		pointer-events: none;
-	}
-
-	div.calendar-item.calendar-price.loading:hover {
-		cursor: default;
-		background-color: var(--calendar-loading);
-	}
-
-	div.calendar-item.calendar-price.cheapest {
-		background-color: var(--calendar-cheap);
-	}
-
-	div.calendar-item.calendar-price.cheapest:hover {
-		background-color: var(--calendar-cheap-hover);
-	}
-
-	div.calendar-item.calendar-price.expensive {
-		background-color: var(--calendar-expensive);
-	}
-
-	div.calendar-item.calendar-price.expensive:hover {
-		background-color: var(--calendar-expensive-hover);
-	}
-
-	div.calendar-item:global(.na-price) {
-		background-color: var(--calendar-na);
-		pointer-events: none;
-	}
-
-	div.calendar-item.calendar-price:global(.na-price:hover) {
-		cursor: default;
-		background-color: var(--calendar-na);
-	}
-
-	div.calendar-item.calendar-price > span {
-		font-weight: 500;
-		color: var(--price-color);
-		padding: 5px;
-	}
-
-	div.calendar-item.calendar-price.cheapest > span {
-		color: var(--cheap-price-color);
-	}
-
-	div.calendar-item.calendar-price.expensive > span {
-		color: var(--expensive-price-color);
-	}
-
-	div.calendar-item.calendar-date > span {
-		font-weight: 500;
-		padding: 5px;
-		color: white;
-	}
-
-	div.calendar-item.calendar-price:hover {
-		cursor: pointer;
-		background-color: var(--calendar-hover);
-	}
-
-	div.calendar-item.calendar-price.selected-dates {
-		box-shadow: inset 0px 0px 18px 5px var(--calendar-dates);
-		pointer-events: none;
-	}
-
-	div.calendar-item.calendar-price.expensive.selected-dates {
-		box-shadow: inset 0px 0px 18px 5px var(--expensive-price-color);
-	}
-
-	div.calendar-item.calendar-price.cheapest.selected-dates {
-		box-shadow: inset 0px 0px 18px 5px var(--cheap-price-color);
-	}
-
-	/*Define rounded corners on corner cells*/
-	/*--------------------------------------*/
-
-	div.top-left-corner {
-		border-top-left-radius: 10px;
-	}
-
-	div.top-right-corner {
-		border-top-right-radius: 10px;
-		background-color: var(--calendar-dates);
-	}
-
-	div.bottom-left-corner {
-		border-bottom-left-radius: 10px;
-	}
-
-	div.bottom-right-corner {
-		border-bottom-right-radius: 10px;
 	}
 
 	/*--------------------------------------*/

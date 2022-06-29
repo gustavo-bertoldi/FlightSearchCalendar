@@ -1,59 +1,27 @@
 <script lang="ts">
-	import { onMount, createEventDispatcher, getContext } from 'svelte';
-	import {
-		TextField,
-		Button,
-		MaterialApp,
-		Row,
-		Col,
-		ProgressCircular,
-		Icon,
-		Menu,
-		List,
-		ListItem
-	} from 'svelte-materialify';
-	import { addDays, format, isAfter, isSameDay } from 'date-fns';
-	import { mdiMenuDown } from '@mdi/js';
-  import { offersResult } from '$stores/search-store';
-	import type { AutocompleteSuggestions, AutocompleteSuggestion, AutocompleteInput } from '$types/autocomplete';
-	import type { FlightOffer, FlightSearchForm } from '$types/flight';
-	import type { CalendarPrices } from '$types/calendar';
-import DropDownMenu from './search_form/DropDownMenu.svelte';
-import OriginDestinationFields from './search_form/OriginDestinationFields.svelte';
+	import { createEventDispatcher } from 'svelte';
+	import { Button, MaterialApp, Row, Col, ProgressCircular } from 'svelte-materialify';
+	import { format } from 'date-fns';
+  import DropDownMenu from '$components/SearchForm/DropDownMenu.svelte';  
+  import AutocompleteField from '$components/SearchForm/AutocompleteField.svelte';
+  import DateField from '$components/SearchForm/DateField.svelte';
+  import NumberField from '$components/SearchForm/NumberField.svelte';
+  import { CONSTANTS } from '$stores/constants';
+  import { origin, destination, departureDate, returnDate, adults, flightClass, legs, offersResult } from '$stores/flight-info';
+  import type { FlightOffer } from '$types/flight';
+  import type { CalendarData, CalendarPrices } from '$types/calendar';
+  import { calendarData } from '$stores/calendar-data';
 
-	const API_URL = getContext('API_URL');
-	const AMADEUS_BLUE = 'rgb(0,94,184)';
 	const dispatch = createEventDispatcher();
+  
+  $: constants = $CONSTANTS;
 
-	//Autocomplete variables
-	//The timeouts are used to store the interval between keypresses by the user
-	//The objective is to start a request to the autocomplete service when user stops typing
-	let originTimeout: number;
-	let destinationTimeout: number;
-	const timeoutInterval = 750;
-	let suggestionsAutocomplete: AutocompleteSuggestions = {
-		origin: [],
-		destination: []
-	};
-
-	//Form values, the initialized values are the default ones in the form, no values means an empty field
-	let flightOneWayRoundtrip: string = 'Roundtrip';
-	let flightOneWayRoundtripMenuActive: boolean;
-	let flightClass: string = 'Economy';
-	let classMenuActive: boolean;
-	let originInput: string = 'JFK - New York';
-	let destinationInput: string = 'LAX - Los Angeles';
-	//Variables starting with a $ are Svelte's dynamic variables. They are recalculated each time
-	//one of it's dependent variables changes value. Used to calculate origin and destination IATA codes
-	//from the input fields that are in the format 'IATA - City name'
-	$: flightOrigin = originInput.substring(0, 3);
-	$: flightDestination = destinationInput.substring(0, 3);
-	let originCity: string = 'New York';
-	let destinationCity: string = 'Los Angeles';
-	let flightDepartureDate: string = '2022-08-01';
-	let flightReturnDate: string = '2022-08-20';
-	let nbAdults: string = '1';
+	$: originIATA = $origin.substring(0, 3);
+	$: destinationIATA = $destination.substring(0, 3);
+	$: originCity = $origin.substring(6);
+	$: destinationCity = $destination.substring(6);
 	let searchActive: boolean = true;
+  let loading: boolean = false;
 
 	//Rules to check form validity
 	//Origin can't be empty neither equal to destination
@@ -100,6 +68,7 @@ import OriginDestinationFields from './search_form/OriginDestinationFields.svelt
 	 * @param {Date} date Date to be verified
 	 * @return {Date} Verified and valid date
 	 */
+  /*
 	function dateVerification(date: Date): Date {
 		const today = new Date();
 		const tomorrow = addDays(today, 1);
@@ -112,60 +81,18 @@ import OriginDestinationFields from './search_form/OriginDestinationFields.svelt
 		} else if (isSameDay(date, dayAfterTomorrow)) {
 			date = addDays(date, 1);
 		}
-
 		return date;
 	}
-
-	/**
-	 * Helper function to start loading.
-	 */
-	function startLoading(): void {
-		if (document.getElementById('loader-container'))
-			document.getElementById('loader-container')!.style.display = 'flex';
-		if (document.getElementById('search-flights-btn'))
-			document.getElementById('search-flights-btn')!.style.display = 'none';
-		if (document.getElementById('calendar-view-btn'))
-			document.getElementById('calendar-view-btn')!.style.visibility = 'hidden';
-	}
-
-	/**
-	 * Helper function to stop loading.
-	 */
-	function stopLoading(): void {
-		if (document.getElementById('loader-container'))
-			document.getElementById('loader-container')!.style.display = 'none';
-		if (document.getElementById('search-flights-btn'))
-			document.getElementById('search-flights-btn')!.style.display = 'block';
-		if (document.getElementById('calendar-view-btn'))
-			document.getElementById('calendar-view-btn')!.style.visibility = 'visible';
-	}
-
-	/**
-	 * Helper function to start loading on input field given in parameter
-	 * @param {string} input Input field. Can take values 'origin' and 'destination'
-	 */
-	function autocompleteStartLoading(input: AutocompleteInput): void {
-		if (document.getElementById(`${input}-autocomplete-load`))
-			document.getElementById(`${input}-autocomplete-load`)!.style.display = 'block';
-	}
-
-	/**
-	 * Helper function to stop loading on input field given in parameter
-	 * @param {string} input Input field. Can take values 'origin' and 'destination'
-	 */
-	function autocompleteStopLoading(input: AutocompleteInput): void {
-		if (document.getElementById(`${input}-autocomplete-load`))
-			document.getElementById(`${input}-autocomplete-load`)!.style.display = 'none';
-	}
-
+  */
 	/**
 	 * Helper function to retrieve and prepare data entered in the search form to be sent in the request
 	 * @param {boolean} forCalendar This parameter is used to perform additional verification on date fields
 	 * and return additional parameter in the case of a calendar scroll
 	 * @returns {object} Object containing all the needed data, after treatment, to be sent in the request
 	 */
+  /*
 	function getFormData(forCalendar: boolean): FlightSearchForm {
-		let departureDate = new Date(flightDepartureDate);
+		let departureDate = new Date();
 		let returnDate = new Date(flightReturnDate);
 		let formData: FlightSearchForm = {
 			origin: flightOrigin,
@@ -185,7 +112,7 @@ import OriginDestinationFields from './search_form/OriginDestinationFields.svelt
 
 		return formData;
 	}
-
+  */
 	/**
 	 * Sends the request to the backend and dispatches an event when the response is received.
 	 * The parameter datesChange indicates that the source of the new request is a click on a
@@ -194,160 +121,53 @@ import OriginDestinationFields from './search_form/OriginDestinationFields.svelt
 	 * @param {boolean} datesChange Indicates if the source of the request is a click on a
 	 * new datepair in the calendar
 	 */
-	function flightSearch(datesChange: boolean): void {
-		const formData = getFormData(false);
-		if (datesChange)
-			dispatch('datesChange', {
-				depDate: formData.departureDateFormatted,
-				retDate: formData.returnDateFormatted
-			});
-		else dispatch('searchButtonClicked');
-		startLoading();
-		const apiURL =
-			`${API_URL}/get-flight-offers` +
-			`?origin=${formData.origin}` +
-			`&destination=${formData.destination}` +
-			`&departureDate=${formData.departureDateFormatted}` +
-			`&returnDate=${formData.returnDateFormatted}` +
-			`&adults=${formData.adults}` +
-			`&travelClass=${formData.class}`;
-
-		const request = new Request(apiURL, { method: 'GET' });
+	function flightSearch(): void {
+    loading = true;
+		const requestURL =
+			`${constants.API_URL}/get-flight-offers` +
+			`?origin=${originIATA}` +
+			`&destination=${destinationIATA}` +
+			`&departureDate=${format(new Date($departureDate), 'yyyy-MM-dd')}` +
+			`&returnDate=${format(new Date($returnDate), 'yyyy-MM-dd')}` +
+			`&adults=${$adults}` +
+			`&travelClass=${$flightClass.toUpperCase().replace(' ', '_')}`;
+      
+		const request = new Request(requestURL, { method: 'GET' });
 		fetch(request)
 			.then((response) => response.json())
 			.then((offers: FlightOffer[]) => {
-				stopLoading();
         offersResult.set(offers);
-				let data = {
-					offers: offers,
-					datesChange: datesChange
-				};
-				dispatch('offersReady', data);
-				if (!datesChange) {
-					flightSearchCalendar();
-				}
+        flightSearchCalendar();
 			})
 			.catch((err) => {
-				stopLoading();
-				console.log(err);
+				console.error(err);
 				dispatch('error');
-			});
+			}).finally(() => loading = false)
 	}
 
 	/**
 	 * Sends a request to the backend to retrieve the prices for the calendar component
 	 */
 	function flightSearchCalendar(): void {
-		const formData = getFormData(true);
-		const apiURL =
-			`${API_URL}/calendar-view` +
-			`?origin=${formData.origin}` +
-			`&destination=${formData.destination}` +
-			`&departureDate=${formData.departureDateFormatted}` +
-			`&returnDate=${formData.returnDateFormatted}` +
-			`&adults=${formData.adults}` +
-			`&travelClass=${formData.class}`;
+		const requestURL =
+			`${constants.API_URL}/calendar-view` +
+			`?origin=${originIATA}` +
+			`&destination=${destinationIATA}` +
+			`&departureDate=${format(new Date($departureDate), 'yyyy-MM-dd')}` +
+			`&returnDate=${format(new Date($returnDate), 'yyyy-MM-dd')}` +
+			`&adults=${$adults}` +
+			`&travelClass=${$flightClass.toUpperCase().replace(' ', '_')}`;
 
-		const request = new Request(apiURL, { method: 'GET' });
+		const request = new Request(requestURL, { method: 'GET' });
 		fetch(request)
 			.then((response) => response.json())
-			.then((flights: CalendarPrices) => {
-				dispatch('flightsReady', {
-					flights: flights,
-					departureDate: formData.departureDateFormatted,
-					returnDate: formData.returnDateFormatted,
-					origin: formData.origin,
-					destination: formData.destination,
-					adults: formData.adults,
-					selectedDepartureDate: formData.selectedDepartureDate,
-					selectedReturnDate: formData.selectedReturnDate,
-					travelClass: formData.class
-				});
+			.then((data: CalendarData[]) => {
+        calendarData.set(data);
 			})
 			.catch((err) => {
-				console.log(err);
+				console.error(err);
 				dispatch('error');
 			});
-	}
-
-	/**
-	 * Listener to departure date change, perform date verification and sets the minimum
-	 * return date to the selected one.
-	 */
-	function departureDateSelected(): void {
-		let flightDepartureInput = document.getElementById('fs-flight-departure-date');
-		let flightReturnInput = document.getElementById('fs-flight-return-date');
-
-		let dateSelected: string;
-		let returnDate: string;
-		if (
-			flightDepartureInput instanceof HTMLInputElement &&
-			flightReturnInput instanceof HTMLInputElement
-		) {
-			dateSelected = flightDepartureInput.value;
-			returnDate = flightReturnInput.value;
-		} else return;
-
-		if (dateSelected) {
-			flightReturnInput!.setAttribute('min', dateSelected);
-			if (returnDate && isAfter(new Date(dateSelected), new Date(returnDate))) {
-				flightReturnInput.value = dateSelected;
-			}
-		}
-	}
-
-	/**
-	 * Helper function to convert a uppercase string to first-letter uppercase
-	 * Ex.: NEW YORK CITY -> New York City
-	 * @param {string} str Input uppercase string
-	 * @returns {string} Output
-	 */
-	function formatString(str: string): string {
-		return str
-			.split(' ')
-			.map((word) => (word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()))
-			.join(' ');
-	}
-
-	/**
-	 * Listener for keydown event. Sends the autocomplete request
-	 * @param {string} keyword Value of input field
-	 * @param {string} input Input field, can take values 'origin' and 'destination'
-	 */
-	function searchSuggestion(keyword: string, input: string): void {
-		if (!keyword) return;
-
-		autocompleteStartLoading(input);
-		const apiURL = `${API_URL}/search-suggestions?keyword=${keyword}`;
-		const request = new Request(apiURL, { method: 'GET' });
-		fetch(request)
-			.then((response) => response.json())
-			.then(
-				(suggestions: AutocompleteSuggestion[]) => (suggestionsAutocomplete[input] = suggestions)
-			)
-			.finally(() => autocompleteStopLoading(input));
-	}
-
-	/**
-	 * Listener when user selects a suggestion from the autocomplete list
-	 * Inserts the selected suggestion in the corresponding input field
-	 * @param {string} input Input, can take values 'origin' and 'destination'
-	 * @param {object} suggestion Object containing the selected suggestion data
-	 * such as IATA code and city name.
-	 */
-	function autocompleteSelected(input: string, suggestion: AutocompleteSuggestion): void {
-		if (input == 'origin') {
-			originCity = suggestion.cityName;
-			flightOrigin = suggestion.iataCode;
-		} else {
-			destinationCity = suggestion.cityName;
-			flightDestination = suggestion.iataCode;
-		}
-		let flightInput = document.getElementById(`fs-flight-${input}`);
-		if (flightInput instanceof HTMLInputElement) {
-			flightInput.value = `${suggestion.iataCode} - ${suggestion.cityName}`;
-			flightInput.dispatchEvent(new Event('input'));
-		}
 	}
 
 	/**
@@ -355,6 +175,7 @@ import OriginDestinationFields from './search_form/OriginDestinationFields.svelt
 	 * @param {string} depDate New departure date in the format 'yyyy-MM-dd'
 	 * @param {string} retDate New return date in the format 'yyyy-MM-dd'
 	 */
+  /*
 	export function newDateSearch(depDate: string, retDate: string): void {
 		let departureDateInput = document.getElementById('fs-flight-departure-date');
 		let returnDateInput = document.getElementById('fs-flight-return-date');
@@ -369,112 +190,34 @@ import OriginDestinationFields from './search_form/OriginDestinationFields.svelt
 		flightReturnDate = retDate;
 		flightSearch(true);
 	}
+  */
 
-	/**
-	 * Svelte's onMount function is called when DOM finished loading.
-	 */
-	onMount(() => {
-		//Flight origin autocomplete event listeners
-		document.getElementById('fs-flight-origin')?.addEventListener('focus', () => {
-			let originItemsList = document.getElementById('origin-items-list');
-			if (originItemsList !== null) originItemsList.style.display = 'block';
-		});
-		document.getElementById('fs-flight-origin')?.addEventListener('focusout', () => {
-			setTimeout(() => {
-				let originItemsList = document.getElementById('origin-items-list');
-				if (originItemsList !== null) originItemsList.style.display = 'none';
-			}, 200);
-		});
-		document.getElementById('fs-flight-origin')?.addEventListener('keydown', function () {
-			clearTimeout(originTimeout);
-			let flightOriginInput = this;
-			if (flightOriginInput instanceof HTMLInputElement) {
-				let flightOrigin = flightOriginInput.value;
-				originTimeout = window.setTimeout(
-					() => searchSuggestion(flightOrigin, 'origin'),
-					timeoutInterval
-				);
-			}
-		});
-
-		//Flight destination event listeners
-		document.getElementById('fs-flight-destination')?.addEventListener('focus', () => {
-			let destinationItemsList = document.getElementById('destination-items-list');
-			if (destinationItemsList !== null) destinationItemsList.style.display = 'block';
-		});
-		document.getElementById('fs-flight-destination')?.addEventListener('focusout', () => {
-			setTimeout(() => {
-				let destinationItemsList = document.getElementById('destination-items-list');
-				if (destinationItemsList !== null) destinationItemsList.style.display = 'none';
-			}, 200);
-		});
-		document.getElementById('fs-flight-destination')?.addEventListener('keydown', function () {
-			clearTimeout(destinationTimeout);
-			let flightDestinationInput = this;
-			if (flightDestinationInput instanceof HTMLInputElement) {
-				let flightDestination = flightDestinationInput.value;
-				destinationTimeout = window.setTimeout(
-					() => searchSuggestion(flightDestination, 'destination'),
-					timeoutInterval
-				);
-			}
-		});
-	});
 </script>
 
 <MaterialApp>
 	<Row class="d-flex justify-center">
 		<Col cols={12} lg={11}>
-      <DropDownMenu options={['Roundtrip', 'One-way']} bind:value={flightOneWayRoundtrip}/>
-			<DropDownMenu options={['Economy', 'Premium Economy', 'Business', 'First']} bind:value={flightOneWayRoundtrip}/>
+      <DropDownMenu options={['Roundtrip', 'One-way']} bind:value={$legs}/>
+			<DropDownMenu options={['Economy', 'Premium Economy', 'Business', 'First']} bind:value={$flightClass}/>
 		</Col>
 	</Row>
 	<Row class="d-flex justify-center">
-    <OriginDestinationFields cols={12} sm={12} lg={3} bind:origin={originInput} bind:destination={destinationInput}/>
-		<Col cols={5} sm={5} lg={2}
-			><TextField
-				id="fs-flight-departure-date"
-				class="fs-text-field"
-				color={AMADEUS_BLUE}
-				type="date"
-				min={format(new Date(), 'yyyy-MM-dd')}
-				on:change={departureDateSelected}
-				rules={departureDateRules}
-				bind:value={flightDepartureDate}>Departure</TextField
-			></Col
-		>
-		<Col cols={5} sm={5} lg={2}
-			><TextField
-				id="fs-flight-return-date"
-				class="fs-text-field"
-				color={AMADEUS_BLUE}
-				type="date"
-				rules={returnDateRules}
-				bind:value={flightReturnDate}>Return</TextField
-			></Col
-		>
-		<Col cols={2} sm={2} lg={1}
-			><TextField
-				id="fs-adults"
-				class="fs-text-field"
-				type="number"
-				color={AMADEUS_BLUE}
-				rules={adultsRules}
-				bind:value={nbAdults}>Adults</TextField
-			></Col
-		>
-		<Col cols={12} sm={12} lg={12} class="d-flex justify-center">
-			<Button
-				class="white-text search-btn"
-				id="search-flights-btn"
-				disabled={!searchActive}
-				on:click={() => flightSearch(false)}>Search</Button
-			>
-		</Col>
+    <AutocompleteField cols={12} sm={12} lg={3} rules={originRules} bind:value={$origin}>Flight origin</AutocompleteField>
+    <AutocompleteField cols={12} sm={12} lg={3} rules={destinationRules} bind:value={$destination}>Flight destination</AutocompleteField>
+    <DateField cols={5} sm={5} lg={2} min={(new Date).toDateString()} rules={departureDateRules} bind:value={$departureDate}>Departure</DateField>
+    <DateField cols={5} sm={5} lg={2} min={$departureDate} rules={returnDateRules} bind:value={$returnDate}>Return</DateField>
+    <NumberField cols={2} sm={2} lg={1} rules={adultsRules} bind:value={$adults}>Adults</NumberField>
+    {#if !loading}
+		  <Col cols={12} sm={12} lg={12} class="d-flex justify-center">
+			  <Button class="white-text search-btn" id="search-flights-btn" disabled={!searchActive} on:click={flightSearch}>Search</Button>
+		  </Col>
+    {/if}
 	</Row>
-	<div class="d-flex justify-center" id="loader-container" style="display: none">
-		<ProgressCircular indeterminate color={AMADEUS_BLUE} />
-	</div>
+  {#if loading}
+  	<div class="d-flex justify-center">
+		  <ProgressCircular indeterminate color={constants.AMADEUS_BLUE} />
+	  </div>
+   {/if} 
 </MaterialApp>
 
 <style>
@@ -488,34 +231,6 @@ import OriginDestinationFields from './search_form/OriginDestinationFields.svelt
 		background-color: var(--amadeus-blue);
 	}
 
-	:global(ul.autocomplete-list) {
-		position: relative;
-		margin: 0;
-		top: 0;
-		width: 100%;
-		padding: 0 3px 0 0;
-		background-color: #fff;
-		list-style: none;
-		max-height: 200px;
-		overflow-y: auto;
-		display: none;
-	}
-
-	:global(ul.autocomplete-list > li) {
-		padding: 10px;
-		font-size: 13px;
-		border-bottom: 1px solid #bcbcbc;
-	}
-
-	:global(ul.autocomplete-list > li > strong) {
-		font-size: 16px;
-	}
-
-	:global(ul.autocomplete-list > li:hover) {
-		cursor: pointer;
-		background-color: var(--autocomplete-hover);
-	}
-
 	::-webkit-scrollbar {
 		width: 6px;
 	}
@@ -524,27 +239,6 @@ import OriginDestinationFields from './search_form/OriginDestinationFields.svelt
 		background: #bcbcbc;
 		-webkit-border-radius: 1ex;
 		border-radius: 1ex;
-	}
-
-	div#destination-autocomplete-load,
-	div#origin-autocomplete-load {
-		display: none;
-	}
-
-	div.autocomplete-iata {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		margin-right: 8px;
-		background-color: rgb(184, 213, 233);
-		border-radius: 6px;
-		width: 60px;
-	}
-
-	div.autocomplete-airport-city {
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
 	}
 
 	:global(button.upper-menu-button) {

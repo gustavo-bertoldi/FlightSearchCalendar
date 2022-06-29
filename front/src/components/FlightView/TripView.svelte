@@ -2,7 +2,7 @@
   import type {  Trip } from '$types/flight';
 	import { createEventDispatcher } from 'svelte';
 	import { ExpansionPanels, Button, Divider } from 'svelte-materialify';
-  import FlightTile from '$components/FlightTile.svelte';
+  import FlightTile from '$components/FlightView/FlightTile.svelte';
 
   export let trip: Trip | undefined = undefined;
 	const dispatcher = createEventDispatcher();
