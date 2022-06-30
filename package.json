@@ -4,11 +4,12 @@
   "description": "Easiy search for flights within a date interval to find the cheapest possible prices using Amadeus APIs.",
   "main": "./back/app.js",
   "engines": {
-    "node": "16.x"
+    "node": "16.x",
+    "npm": "6.x"
   },
   "scripts": {
-    "heroku-prebuild": "npm install --prefix front && npm install --prefix back",
-    "build": "npm run build --prefix front",
+    "heroku-prebuild": "npm ci --prefix front && npm ci --prefix back",
+    "heroku-postbuild": "npm run build --prefix front",
     "start": "npm run serve --prefix back"
   },
   "repository": {
