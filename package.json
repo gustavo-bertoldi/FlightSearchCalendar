@@ -3,8 +3,13 @@
   "version": "1.0.0",
   "description": "Easiy search for flights within a date interval to find the cheapest possible prices using Amadeus APIs.",
   "main": "./back/app.js",
+  "engines": {
+    "node": "16.x"
+  },
   "scripts": {
-    "start": "start.sh"
+    "build-front": "cd front && npm i && npm run build",
+    "start-back": "cd back && npm i && npm run serve",    
+    "start": "npm run build-front && npm run start-back"
   },
   "repository": {
     "type": "git",
