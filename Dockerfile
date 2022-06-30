@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:16-alpine
 
 ARG AMADEUS_CLIENT_ID
 ARG AMADEUS_CLIENT_SECRET
@@ -10,18 +10,18 @@ ENV AMADEUS_CLIENT_SECRET=$AMADEUS_CLIENT_SECRET
 ENV ENV=$ENV
 ENV PORT=$PORT
 
-COPY package.json ./
 COPY front/package.json ./front/
 COPY back/package.json ./back/
 
-RUN npm run docker-install
+RUN npm install --prefix front
+RUN npm install --prefix back
 
 COPY . .
 
-RUN npm run docker-build
+RUN npm run build --prefix front
 
 COPY . .
 
 EXPOSE $PORT
 
-CMD npm run start
+CMD npm run serve --prefix back
