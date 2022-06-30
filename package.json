@@ -10,6 +10,8 @@
   "scripts": {
     "heroku-prebuild": "npm install --prefix front && npm install --prefix back",
     "heroku-postbuild": "npm run build --prefix front",
+    "docker-install": "npm install --prefix front && npm install --prefix back",
+    "docker-build": "npm run build --prefix front",
     "start": "npm run serve --prefix back"
   },
   "repository": {

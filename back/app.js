@@ -10,18 +10,12 @@ require('dotenv/config');
 const PORT = process.env.PORT || 3000;
 if (!process.env.AMADEUS_CLIENT_ID) throw new Error('AMADEUS_CLIENT_ID environment variable could not be read');
 if (!process.env.AMADEUS_CLIENT_SECRET) throw new Error('AMADEUS_CLIENT_SECRET environment variable could not be read');
-if (!process.env.CORS_ALLOW) throw new Error('CORS_ALLOW environment variable could not be read');
 const waitTime = process.env.ENV.endsWith('PROD') ? 25 : 100;
 
 //Configure express
 let app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(function (req, res, next) {
-  res.header("Access-Control-Allow-Origin", `http://${process.env.CORS_ALLOW}`);
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  next();
-});
 app.use(express.static(path.join(__dirname, '../front/public')))
 
 
