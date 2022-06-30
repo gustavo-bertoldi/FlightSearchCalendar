@@ -7,9 +7,9 @@
     "node": "16.x"
   },
   "scripts": {
-    "build-front": "npm install --prefix front && npm run build --prefix front",
-    "serve": "npm install --prefix back && npm run serve --prefix back",    
-    "start": "npm run build-front && npm run serve"
+    "heroku-prebuild": "npm install --prefix front && npm install --prefix back",
+    "build": "npm run build --prefix front",
+    "start": "npm run serve --prefix back"
   },
   "repository": {
     "type": "git",
