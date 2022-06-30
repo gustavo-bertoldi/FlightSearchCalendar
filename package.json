@@ -8,7 +8,7 @@
     "npm": "6.x"
   },
   "scripts": {
-    "heroku-prebuild": "npm ci --prefix front && npm ci --prefix back",
+    "heroku-prebuild": "npm install --prefix front && npm install --prefix back",
     "heroku-postbuild": "npm run build --prefix front",
     "start": "npm run serve --prefix back"
   },
