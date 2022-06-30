@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Sketch for a calendar view of cheapest flights",
   "main": "app.js",
+  "engines": {
+    "node": "16.x"
+  },
   "scripts": {
     "serve": "node app.js",
     "watch": "npm-watch"
@@ -19,6 +22,6 @@
     "dotenv": "^16.0.1",
     "express": "^4.18.1",
     "npm-watch": "^0.11.0",
-    "url": "^0.11.0"
+    "path": "^0.12.7"
   }
 }

@@ -1,0 +1,19 @@
+{
+  "name": "calendar-app",
+  "version": "1.0.0",
+  "description": "Easiy search for flights within a date interval to find the cheapest possible prices using Amadeus APIs.",
+  "main": "./back/app.js",
+  "scripts": {
+    "start": "start.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gustavo-bertoldi/FlightSearchCalendar.git"
+  },
+  "author": "Gustavo GIUNCO BERTOLDI",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gustavo-bertoldi/FlightSearchCalendar/issues"
+  },
+  "homepage": "https://github.com/gustavo-bertoldi/FlightSearchCalendar#readme"
+}

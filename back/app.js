@@ -2,9 +2,8 @@ const express = require('express');
 const format = require('date-fns/format');
 const addDays = require('date-fns/addDays')
 const bodyParser = require('body-parser');
-const url = require('url');
 const Amadeus = require('amadeus');
-const { isThisQuarter } = require('date-fns');
+const path = require('path');
 require('dotenv/config');
 
 //Load server parameters
@@ -23,6 +22,7 @@ app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   next();
 });
+app.use(express.static(path.join(__dirname, '../front/public')))
 
 
 //Configure Amadeus
@@ -380,3 +380,7 @@ app.post('/airline-lookup', (req, res) => {
       res.status(500).send(err);
     });
 });
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../front/public/index.html'));
+})
