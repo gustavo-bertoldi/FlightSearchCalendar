@@ -7,7 +7,7 @@
     "node": "16.x"
   },
   "scripts": {
-    "build-front": "cd front && npm install && npm run build",
+    "build-front": "cd front && npm install",
     "start-back": "cd back && npm install && npm run serve",    
     "start": "npm run build-front"
   },
