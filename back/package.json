@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "Sketch for a calendar view of cheapest flights",
   "main": "app.js",
-  "engines": {
-    "node": "16.x"
-  },
   "scripts": {
     "serve": "node app.js",
     "watch": "npm-watch"

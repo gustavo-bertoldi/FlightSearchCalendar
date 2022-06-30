@@ -7,9 +7,9 @@
     "node": "16.x"
   },
   "scripts": {
-    "build-front": "cd front && npm install && npm run build",
-    "start-back": "cd back && npm install && npm run serve",    
-    "start": "npm run build-front"
+    "build-front": "npm install --prefix front && npm run build --prefix front",
+    "serve": "npm install --prefix back && npm run serve --prefix back",    
+    "start": "npm run build-front && npm run serve"
   },
   "repository": {
     "type": "git",

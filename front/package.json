@@ -8,8 +8,7 @@
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
-    "start": "sirv public --no-clear --port 5000",
-    "postinstall": "npm install -g rollup"
+    "start": "sirv public --no-clear --port 5000"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^17.0.0",
@@ -24,6 +23,7 @@
   "dependencies": {
     "@mdi/js": "^6.7.96",
     "autocompleter": "^6.1.3",
+    "calendar-app": "file:..",
     "date-fns": "^2.28.0",
     "sirv-cli": "^2.0.0",
     "svelte-materialify": "^0.3.11"
