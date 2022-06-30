@@ -7,7 +7,7 @@
 import TripView from "./TripView.svelte";
 
   //One of the ways in Svelte to set a shared variable between the components. Backend URL.
-  setContext('API_URL', 'https://calendarapp-test.herokuapp.com')
+  setContext('API_URL', 'https://calendarapp-docker.herokuapp.com')
   
 
   let calendar;
