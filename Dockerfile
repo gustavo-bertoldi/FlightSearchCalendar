@@ -1,0 +1,16 @@
+FROM node:18-alpine
+
+WORKDIR /back
+
+COPY package.json ./
+
+#ENV AMADEUS_CLIENT_ID=YOUR_CLIENT_ID
+#ENV AMADEUS_CLIENT_SECRET=YOUR_SECRET
+
+RUN npm i
+
+COPY . .
+
+EXPOSE 3000
+
+CMD npm run serve
