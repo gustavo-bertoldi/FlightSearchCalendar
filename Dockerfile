@@ -1,16 +1,17 @@
-FROM node:18-alpine
+FROM node:18
 
-WORKDIR /back
+COPY ./front/package.json ./front/
+COPY ./back/package.json ./back/
 
-COPY package.json ./
-
-#ENV AMADEUS_CLIENT_ID=YOUR_CLIENT_ID
-#ENV AMADEUS_CLIENT_SECRET=YOUR_SECRET
-
-RUN npm i
+RUN npm install --prefix front
+RUN npm install --prefix back
 
 COPY . .
 
-EXPOSE 3000
+RUN npm run build --prefix front
 
-CMD npm run serve
+COPY . .
+
+EXPOSE $PORT
+
+CMD npm run serve --prefix back

@@ -9,17 +9,17 @@ const config = {
 
 	kit: {
 		adapter: adapter({
-      // default options are shown
-      pages: 'build',
-      assets: 'build',
-      fallback: null
-    }),
+			// default options are shown
+			pages: 'build',
+			assets: 'build',
+			fallback: null
+		}),
 		alias: {
 			$stores: 'src/stores',
 			$components: 'src/components',
 			$types: 'src/types'
 		},
-    prerender: {default: true}
+		prerender: { default: true }
 	}
 };
 
