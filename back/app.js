@@ -2,9 +2,8 @@ const express = require('express');
 const format = require('date-fns/format');
 const addDays = require('date-fns/addDays')
 const bodyParser = require('body-parser');
-const url = require('url');
+const path = require('path');
 const Amadeus = require('amadeus');
-const { isThisQuarter, isBefore } = require('date-fns');
 require('dotenv/config');
 
 //Load server parameters
