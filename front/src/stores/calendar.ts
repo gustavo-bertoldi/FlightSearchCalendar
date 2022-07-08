@@ -17,7 +17,7 @@ import type {
 	DateStringFormatted,
 	FetchCalendarFunction,
 	FetchNewPricesFunction
-} from '$types/calendar';
+} from '../types/calendar'
 import { addDays, differenceInDays, format } from 'date-fns';
 
 function dateValidation(date: Date): Date {
