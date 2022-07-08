@@ -12,7 +12,7 @@ import type {
 	CalendarDate,
 	CalendarPrices,
 	CellDate,
-	Datepair,
+	Datepair,  
 	DateString,
 	DateStringFormatted,
 	FetchCalendarFunction,
