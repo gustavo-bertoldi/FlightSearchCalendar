@@ -1,40 +1,71 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
-  import { ProgressCircular } from "svelte-materialify";
-  import { CONSTANTS } from "$stores/constants";
-  import type { CalendarRelativePosition, DateString } from "$types/calendar";
+	import { createEventDispatcher, tick } from 'svelte';
+	import { ProgressCircular } from 'svelte-materialify';
+	import { CONSTANTS } from '$stores/constants';
+	import {
+		selectedPriceCell,
+		departureDates,
+		returnDates,
+		calendar,
+		fetchNewPrices
+	} from '$stores/calendar';
+	import { departureDateFormatted, returnDateFormatted } from '$stores/flight_search';
+	import { isAfter } from 'date-fns';
+	import type { CalendarPrice, Datepair, DateString } from '$types/calendar';
 
-  export let cheap: boolean = false;
-  export let expensive: boolean = false;
-  export let currentDates: boolean = false;
-  export let naPrice: boolean = false;
-  export let loading: boolean = false;
-  export let departureDate: DateString;
-  export let returnDate: DateString;
-  export let relX: number;
-  export let relY: number;
+	export let cheap = false;
+	export let expensive = false;
+	export let _departureDate: DateString;
+	export let _returnDate: DateString;
+	export let bottomLeftCorner: boolean;
+	export let price: CalendarPrice | undefined;
 
-  let price: string;
-  let dispatcher = createEventDispatcher();
-  $: bottomLeftCorner = relX === -3 && relY === 3;
-  $: constants = $CONSTANTS;
-  $: _class = `${cheap ? 'cheap' : ''} ${expensive ? 'expensive' : ''} `
-    + `${naPrice ? 'na-price' : ''} ${bottomLeftCorner ? 'bottom-left-corner' : ''}`
-    + `${currentDates ? 'current-dates' : ''} ${loading ? 'loading' : ''}`;
+	$: naPrice = !price?.price;
+	$: loading = !price;
+	$: currentDates =
+		!loading && _departureDate === $departureDateFormatted && _returnDate === $returnDateFormatted;
+	$: invalidDatepair = isAfter(new Date(_departureDate), new Date(_returnDate));
+	$: constants = $CONSTANTS;
+	$: _class =
+		`${cheap ? 'cheap' : ''} ${!cheap && expensive ? 'expensive' : ''} ` +
+		`${naPrice ? 'na-price' : ''} ${bottomLeftCorner ? 'bottom-left-corner' : ''}` +
+		`${currentDates ? 'current-dates' : ''} ${loading ? 'loading' : ''}`;
 
+	let dispatcher = createEventDispatcher();
+
+	async function click() {
+		$selectedPriceCell = {
+			departureDate: _departureDate,
+			returnDate: _returnDate
+		};
+		await tick();
+		let newDatepairs: Datepair[] = [];
+		$departureDates.forEach((dep) => {
+			$returnDates.forEach((ret) => {
+				let datepair: Datepair = `${dep.date}>${ret.date}`;
+				if (!Object.prototype.hasOwnProperty.call($calendar, datepair)) newDatepairs.push(datepair);
+			});
+		});
+
+		$fetchNewPrices(newDatepairs)
+			.then((prices) => ($calendar = { ...$calendar, ...prices }))
+			.catch(() => dispatcher('error'));
+	}
 </script>
 
-<div class={_class} on:click={() => dispatcher('click')}>
-	{#if loading}
-    <ProgressCircular indeterminate color={constants.AMADEUS_BLUE} />
-	{:else}
-    <span contenteditable="false" bind:textContent={price}><slot/></span>
+<div class={_class} on:click={click}>
+	{#if !invalidDatepair}
+		{#if loading}
+			<ProgressCircular indeterminate color={constants.AMADEUS_BLUE} />
+		{:else}
+			<span contenteditable="false">{price?.priceFormatted || 'N/A'}</span>
+		{/if}
 	{/if}
 </div>
 
 <style>
-  :root {
-    --price-cell-background: rgb(155, 202, 236); 
+	:root {
+		--price-cell-background: rgb(155, 202, 236);
 		--cell-cheap: rgb(101, 206, 152);
 		--cell-expensive: rgb(213, 122, 161);
 		--cell-loading: rgb(202, 220, 233);
@@ -48,7 +79,7 @@
 	}
 
 	div {
-    display: flex;
+		display: flex;
 		justify-content: center;
 		align-items: center;
 		height: 50px;
@@ -94,16 +125,16 @@
 		cursor: default;
 	}
 
-  div.current-dates {
+	div.current-dates {
 		box-shadow: inset 0px 0px 18px 5px var(--cell-text);
 		pointer-events: none;
 	}
-  
+
 	div.current-dates.cheap {
 		box-shadow: inset 0px 0px 18px 5px var(--cheap-text);
 	}
 
-  div.current-dates.expensive {
+	div.current-dates.expensive {
 		box-shadow: inset 0px 0px 18px 5px var(--expensive-text);
 	}
 

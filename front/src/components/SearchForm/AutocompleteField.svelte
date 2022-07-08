@@ -1,86 +1,85 @@
 <script lang="ts">
 	import { Icon, ProgressCircular, TextField, Col } from 'svelte-materialify';
 	import { CONSTANTS } from '$stores/constants';
-  import type { AutocompleteSuggestion, InputRule } from '$types/autocomplete';
+	import type { AutocompleteSuggestion, InputRule } from '$types/autocomplete';
 
-  export let cols: number | undefined = undefined;
-  export let sm: number | undefined = undefined;
-  export let md: number | undefined = undefined;
-  export let lg: number | undefined = undefined;
-  export let xl: number | undefined = undefined;
+	export let cols: number | undefined = undefined;
+	export let sm: number | undefined = undefined;
+	export let md: number | undefined = undefined;
+	export let lg: number | undefined = undefined;
+	export let xl: number | undefined = undefined;
 	export let value: string | undefined = undefined;
-  export let rules: InputRule[] = [];
-  export let autocompleteOptions: AutocompleteSuggestion[] = [];
+	export let rules: InputRule[] = [];
+	export let autocompleteOptions: AutocompleteSuggestion[] = [];
 
-  $: constants = $CONSTANTS;
-  let loading = false;
-  let showAutocomplete = false;
-  let timeout: number;
-  const timeoutInterval = 750;
+	$: constants = $CONSTANTS;
+	let loading = false;
+	let showAutocomplete = false;
+	let timeout: number;
+	const timeoutInterval = 750;
 
-  /**
+	/**
 	 * Listener for keydown event. Sends the autocomplete request
 	 * @param {string} keyword Value of input field
 	 * @param {string} input Input field, can take values 'origin' and 'destination'
 	 */
 	function fetchAutocomplete(keyword: string): void {
 		if (!keyword) return;
-    loading = true;
+		loading = true;
 		const apiURL = `${constants.API_URL}/search-suggestions?keyword=${keyword}`;
 		const request = new Request(apiURL, { method: 'GET' });
 		fetch(request)
 			.then((response) => response.json())
-			.then(
-				(options: AutocompleteSuggestion[]) => autocompleteOptions = options
-      )
-			.finally(() => loading = false);
+			.then((options: AutocompleteSuggestion[]) => (autocompleteOptions = options))
+			.finally(() => (loading = false));
 	}
 
-  function keydown(this: HTMLInputElement) {
-    clearTimeout(timeout);
-    timeout = window.setTimeout(
-      () => fetchAutocomplete(this.value),
-      timeoutInterval
-    );
-  }
+	function keydown(this: HTMLInputElement) {
+		clearTimeout(timeout);
+		timeout = window.setTimeout(() => fetchAutocomplete(this.value), timeoutInterval);
+	}
 </script>
 
-<Col cols={cols} sm={sm} md={md} lg={lg} xl={xl}>
+<Col {cols} {sm} {md} {lg} {xl}>
 	<TextField
 		color={constants.AMADEUS_BLUE}
-    rules={rules}
-		bind:value={value}
-    on:focus={() => showAutocomplete = true}
-    on:blur={() => setTimeout(() => showAutocomplete = false, 250)}
-    on:keydown={keydown}>
+		{rules}
+		bind:value
+		on:focus={() => (showAutocomplete = true)}
+		on:blur={() => setTimeout(() => (showAutocomplete = false), 250)}
+		on:keydown={keydown}
+	>
 		<div slot="append">
-      {#if loading}
-			  <Icon>
-				  <ProgressCircular indeterminate color={constants.AMADEUS_BLUE} />
-			  </Icon>
-      {/if}
+			{#if loading}
+				<Icon>
+					<ProgressCircular indeterminate color={constants.AMADEUS_BLUE} />
+				</Icon>
+			{/if}
 		</div>
-		<slot/>
+		<slot />
 	</TextField>
-  {#if showAutocomplete}
-	<ul class="autocomplete-list">
-    {#each autocompleteOptions as option}
-      <li on:click={() => value = `${option.iataCode} - ${option.cityName}`} style="display: flex;">
-        <div class="autocomplete-iata">
-          <span style="font-weight: bold; font-size: 16px;">{option.iataCode}</span>
-        </div>
-        <div class="autocomplete-airport-city">
-          <span style="font-weight: 500; font-size: 14px;">{option.cityName}</span>
-          <span>{option.name}</span>
-        </div>
-      </li>
-    {/each}
-  </ul>
-  {/if}
+	{#if showAutocomplete}
+		<ul class="autocomplete-list">
+			{#each autocompleteOptions as option}
+				<li
+					on:click={() => (value = `${option.iataCode} - ${option.cityName}`)}
+					style="display: flex;"
+				>
+					<div class="autocomplete-iata">
+						<span style="font-weight: bold; font-size: 16px;">{option.iataCode}</span>
+					</div>
+					<div class="autocomplete-airport-city">
+						<span style="font-weight: 500; font-size: 14px;">{option.cityName}</span>
+						<span>{option.name}</span>
+					</div>
+				</li>
+			{/each}
+		</ul>
+	{/if}
 </Col>
 
 <style>
-  :root {
+	:root {
 		--autocomplete-hover: #d9dfe6;
 		--amadeus-blue: rgb(0, 94, 184);
 	}
@@ -107,7 +106,7 @@
 		background-color: var(--autocomplete-hover);
 	}
 
-  div.autocomplete-iata {
+	div.autocomplete-iata {
 		display: flex;
 		justify-content: center;
 		align-items: center;

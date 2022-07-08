@@ -9,11 +9,11 @@ const config = {
 
 	kit: {
 		adapter: adapter(),
-    alias: {
-      $stores: 'src/stores',
-      $components: 'src/components',
-      $types: 'src/types'
-    }
+		alias: {
+			$stores: 'src/stores',
+			$components: 'src/components',
+			$types: 'src/types'
+		}
 	}
 };
 

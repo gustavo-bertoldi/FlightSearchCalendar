@@ -94,35 +94,26 @@ function sameOutbound(it1, it2) {
  */
 function getCheapestDates(origin, destination, departureDate, returnDate, adults, travelClass) {
   return new Promise(async (resolve, reject) => {
-    let depDate = new Date(departureDate);
-    let retDate = new Date(returnDate);
-    let flights = [];
+    let departure = new Date(departureDate);
+    let _return = new Date(returnDate);
+    let flights = {};
     let responseCount = 0;
     let errorCount = 0;
 
-    await wait(waitTime);
+    await wait(5*waitTime);
 
     for (let i = -3; i <= 3; i++) {
-      let currentDepartureDate = addDays(depDate, i);
-      let currentDepartures = {
-        date: format(currentDepartureDate, 'yyyy-MM-dd'),
-        dateFormatted: format(currentDepartureDate, 'dd/MM/yyyy'),
-        returns: []
-      }
-      flights.push(currentDepartures);
+      let currentDeparture = format(addDays(departure, i), 'yyyy-MM-dd');
 
       for (let j = -3; j <= 3; j++) {
-        let currentReturnDate = addDays(retDate, j);
-        let currentReturns = {
-          date: format(currentReturnDate, 'yyyy-MM-dd'),
-          dateFormatted: format(currentReturnDate, 'dd/MM/yyyy')
-        }
+        let currentReturn = format(addDays(_return, j), 'yyyy-MM-dd');
+        let datepair = `${currentDeparture}>${currentReturn}`;
 
         amadeus.shopping.flightOffersSearch.get({
           originLocationCode: origin,
           destinationLocationCode: destination,
-          departureDate: currentDepartures.date,
-          returnDate: currentReturns.date,
+          departureDate: currentDeparture,
+          returnDate: currentReturn,
           adults: adults,
           max: 1,
           travelClass: travelClass
@@ -131,19 +122,19 @@ function getCheapestDates(origin, destination, departureDate, returnDate, adults
             style: 'currency',
             currency: response.data[0].price.currency
           });
-          currentReturns.price = parseFloat(response.data[0].price.total);
-          currentReturns.priceFormatted = currencyFormatter.format(response.data[0].price.total);
+          flights[datepair] = {
+            price: parseFloat(response.data[0].price.total),
+            priceFormatted: currencyFormatter.format(response.data[0].price.total)
+          };
         }).catch((err) => {
           errorCount++;
+          flights[datepair] = {};
           console.error(`Get cheapest dates. Error ${err.response.statusCode} - ${err.description[0].title}`);
           if (err.response.statusCode != 429) reject(err);
         }).finally(() => {
           responseCount++;
-          currentDepartures.returns.push(currentReturns);
           if (responseCount == 49) {
             //Sort the arrays by date
-            flights.sort((a, b) =>  (new Date(a.date) - new Date(b.date)));
-            flights.forEach(dep => dep.returns.sort((a, b) => (new Date(a.date) - new Date(b.date))));
             console.log(`Request completed with ${responseCount - errorCount} successes and ${errorCount} errors.`)
             resolve(flights);
           }
@@ -170,6 +161,8 @@ function getCheapestDatepairs(origin, destination, adults, datepairs, travelClas
     let responseCount = 0;
     let errorCount = 0;
     let expectedResponses = datepairs.length;
+
+    await wait(5*waitTime);
 
     datepairs.forEach(async (datepair) => {
       let departureDate = datepair.split('>')[0];
@@ -231,7 +224,7 @@ function getSearchSuggestions(keyword) {
 
 function getFlightOffers(origin, destination, departureDate, returnDate, adults, travelClass) {
   return new Promise(async (resolve, reject) => {
-    await wait(5*waitTime);
+    await wait(waitTime);
     amadeus.shopping.flightOffersSearch.get({
       originLocationCode: origin,
       destinationLocationCode: destination,
