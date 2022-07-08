@@ -2,9 +2,8 @@ const express = require('express');
 const format = require('date-fns/format');
 const addDays = require('date-fns/addDays')
 const bodyParser = require('body-parser');
-const url = require('url');
+const path = require('path');
 const Amadeus = require('amadeus');
-const { isThisQuarter, isBefore } = require('date-fns');
 require('dotenv/config');
 
 //Load server parameters
@@ -18,11 +17,7 @@ const waitTime = process.env.ENV.endsWith('PROD') ? 25 : 100;
 let app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(function (req, res, next) {
-  res.header("Access-Control-Allow-Origin", `http://${process.env.CORS_ALLOW}`);
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  next();
-});
+app.use(express.static(path.join(__dirname, '../front/build')));
 
 
 //Configure Amadeus
@@ -404,3 +399,7 @@ app.post('/airline-lookup', (req, res) => {
       res.status(500).send(err);
     });
 });
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../front/public/index.html'));
+})

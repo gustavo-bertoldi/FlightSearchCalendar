@@ -1,8 +1,8 @@
 import { addDays, format } from 'date-fns';
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import { CONSTANTS } from './constants';
-import type { DateString } from '$types/calendar';
-import type { FlightItinerary, FlightOffer, FlightSearchFunction, Trip } from '$types/flight';
+import type { DateString } from '../types/calendar';
+import type { FlightItinerary, FlightOffer, FlightSearchFunction, Trip } from '../types/flight';
 
 function _flightSearch(
 	apiURL: string,
