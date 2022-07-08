@@ -400,3 +400,7 @@ app.post('/airline-lookup', (req, res) => {
       res.status(500).send(err);
     });
 });
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../front/public/index.html'));
+})
