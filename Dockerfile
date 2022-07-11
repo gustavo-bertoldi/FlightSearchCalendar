@@ -1,17 +1,22 @@
-FROM node:18
+FROM node:16
 
-COPY ./front/package.json ./front/
-COPY ./back/package.json ./back/
+WORKDIR /front
+COPY ./front/package.json .
+COPY ./front/svelte.config.js .
+COPY ./front/tsconfig.json .
+COPY ./front/.npmrc .
+COPY ./front/static ./static
+COPY ./front/src ./src
 
-RUN npm install --prefix front
-RUN npm install --prefix back
+RUN npm install
+RUN npm run build
 
-COPY . .
+WORKDIR /back
+COPY ./back/package.json .
+COPY ./back/app.js .
 
-RUN npm run build --prefix front
+RUN npm install
 
-COPY . .
+EXPOSE 3000
 
-EXPOSE $PORT
-
-CMD npm run serve --prefix back
+CMD npm run serve
