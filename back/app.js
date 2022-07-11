@@ -15,7 +15,7 @@ if (!process.env.AMADEUS_CLIENT_SECRET) throw new Error('AMADEUS_CLIENT_SECRET e
 let app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, '../front/build')));
+app.use(express.static(path.join(__dirname, '..', 'front', 'build')));
 
 
 //Configure Amadeus
