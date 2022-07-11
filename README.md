@@ -15,7 +15,7 @@ AMADEUS_CLIENT_ID="YOUR_CLIENT_ID"
 AMADEUS_CLIENT_SECRET="YOUR_SECRET"
 
 # Optionals
-AMADEUS_HOST="HOST" # Values can be 'production' or 'test'. Default is test.
+AMADEUS_ENV="ENV" # Values can be 'production' or 'test'. Default is test.
 PORT=SOME_PORT # Port to which the app will listen. Default is 3000.
 ```
 

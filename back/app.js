@@ -19,10 +19,10 @@ app.use(express.static(path.join(__dirname, '..', 'front', 'build')));
 
 
 //Configure Amadeus
-const amadeusHostname = process.env.AMADEUS_HOST || 'test';
-const waitTime = amadeusHostname === 'production' ? 25 : 100;
+const AMADEUS_HOST = process.env.AMADEUS_ENV || 'test';
+const waitTime = AMADEUS_HOST === 'production' ? 25 : 100;
 let amadeus = new Amadeus({
-  hostname: amadeusHostname
+  hostname: AMADEUS_HOST
 });
 
 /**
