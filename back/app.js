@@ -2,31 +2,25 @@ const express = require('express');
 const format = require('date-fns/format');
 const addDays = require('date-fns/addDays')
 const bodyParser = require('body-parser');
-const url = require('url');
+const path = require('path');
 const Amadeus = require('amadeus');
-const { isThisQuarter } = require('date-fns');
 require('dotenv/config');
 
 //Load server parameters
 const PORT = process.env.PORT || 3000;
 if (!process.env.AMADEUS_CLIENT_ID) throw new Error('AMADEUS_CLIENT_ID environment variable could not be read');
 if (!process.env.AMADEUS_CLIENT_SECRET) throw new Error('AMADEUS_CLIENT_SECRET environment variable could not be read');
-if (!process.env.CORS_ALLOW) throw new Error('CORS_ALLOW environment variable could not be read');
-const waitTime = process.env.ENV.endsWith('PROD') ? 25 : 100;
 
 //Configure express
 let app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(function (req, res, next) {
-  res.header("Access-Control-Allow-Origin", `http://${process.env.CORS_ALLOW}`);
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  next();
-});
+app.use(express.static(path.join(__dirname, '../front/build')));
 
 
 //Configure Amadeus
-const amadeusHostname = process.env.ENV.endsWith('PROD') ? 'production' : 'test';
+const amadeusHostname = process.env.AMADEUS_HOST || 'test';
+const waitTime = amadeusHostname === 'production' ? 25 : 100;
 let amadeus = new Amadeus({
   hostname: amadeusHostname
 });
@@ -75,9 +69,7 @@ function formatDuration(str) {
  * @returns {string} Output
  */
 function formatString(str) {
-  str = str.split(' ');
-  str = str.map(word => word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
-  return str.join(' ');
+  return str.split(/[ -]/).map(word => word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
 }
 
 function sameOutbound(it1, it2) {
@@ -96,39 +88,47 @@ function sameOutbound(it1, it2) {
  */
 function getCheapestDates(origin, destination, departureDate, returnDate, adults, travelClass) {
   return new Promise(async (resolve, reject) => {
-    let depDate = new Date(departureDate);
-    let retDate = new Date(returnDate);
+    let departure = new Date(departureDate);
+    let _return = new Date(returnDate);
     let flights = {};
     let responseCount = 0;
     let errorCount = 0;
 
-    await wait(waitTime);
+    await wait(5*waitTime);
 
     for (let i = -3; i <= 3; i++) {
-      let currentDepDate = format(addDays(depDate, i), 'yyyy-MM-dd');
+      let currentDeparture = format(addDays(departure, i), 'yyyy-MM-dd');
 
       for (let j = -3; j <= 3; j++) {
-        let currentRetDate = format(addDays(retDate, j), 'yyyy-MM-dd');
-        let datepair = `${currentDepDate.toString()}>${currentRetDate.toString()}`
+        let currentReturn = format(addDays(_return, j), 'yyyy-MM-dd');
+        let datepair = `${currentDeparture}>${currentReturn}`;
 
         amadeus.shopping.flightOffersSearch.get({
           originLocationCode: origin,
           destinationLocationCode: destination,
-          departureDate: currentDepDate,
-          returnDate: currentRetDate,
+          departureDate: currentDeparture,
+          returnDate: currentReturn,
           adults: adults,
           max: 1,
           travelClass: travelClass
         }).then((response) => {
-          flights[datepair] = response.data;
+          const currencyFormatter = Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: response.data[0].price.currency
+          });
+          flights[datepair] = {
+            price: parseFloat(response.data[0].price.total),
+            priceFormatted: currencyFormatter.format(response.data[0].price.total)
+          };
         }).catch((err) => {
           errorCount++;
-          flights[datepair] = 'error';
+          flights[datepair] = {};
           console.error(`Get cheapest dates. Error ${err.response.statusCode} - ${err.description[0].title}`);
           if (err.response.statusCode != 429) reject(err);
         }).finally(() => {
           responseCount++;
           if (responseCount == 49) {
+            //Sort the arrays by date
             console.log(`Request completed with ${responseCount - errorCount} successes and ${errorCount} errors.`)
             resolve(flights);
           }
@@ -156,6 +156,8 @@ function getCheapestDatepairs(origin, destination, adults, datepairs, travelClas
     let errorCount = 0;
     let expectedResponses = datepairs.length;
 
+    await wait(5*waitTime);
+
     datepairs.forEach(async (datepair) => {
       let departureDate = datepair.split('>')[0];
       let returnDate = datepair.split('>')[1];
@@ -169,10 +171,17 @@ function getCheapestDatepairs(origin, destination, adults, datepairs, travelClas
         max: 1,
         travelClass: travelClass
       }).then((response) => {
-        flights[datepair] = response.data;
+        const currencyFormatter = Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: response.data[0].price.currency
+        });
+        flights[datepair] = {
+          price: parseFloat(response.data[0].price.total),
+          priceFormatted: currencyFormatter.format(response.data[0].price.total)
+        };
       }).catch((err) => {
         errorCount++;
-        flights[datepair] = 'error';
+        flights[datepair] = {};
       }).finally(() => {
         responseCount++;
         if (responseCount == expectedResponses) {
@@ -193,7 +202,16 @@ function getSearchSuggestions(keyword) {
       subType: Amadeus.location.any,
       keyword: keyword
     })
-    .then(response => resolve(response))
+    .then(response => {
+      let suggestions = response.result.data.map(entry => {
+        return {
+          iataCode: entry.iataCode,
+          name: formatString(entry.name),
+          cityName: formatString(entry.address.cityName)
+        }
+      });
+      resolve(suggestions);
+    })
     .catch(err => reject(err))
   });
 }
@@ -381,3 +399,7 @@ app.post('/airline-lookup', (req, res) => {
       res.status(500).send(err);
     });
 });
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../front/public/index.html'));
+})
