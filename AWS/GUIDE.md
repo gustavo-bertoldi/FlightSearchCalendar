@@ -133,7 +133,10 @@ With the new instance created, select it in the **Instances** list and click on 
 
 On the next page click on **Connect** on the bottom to open a terminal in the instance.
 
-Now we are going to install the necessary services in the instance in order to run our application and the automatic deployment. Run the followings commands to install the **codeDeploy-agent**:
+Now we are going to install the necessary services in the instance in order to run our application and the automatic deployment.
+
+### Install CodeDeploy Agent
+Run the followings commands to install the **codeDeploy-agent**:
 
 To get the correct link to use in the ```wget``` command you need to replace *bucket-name* and *region-identifier* with the information from your AWS region, which can be found [here](https://docs.aws.amazon.com/codedeploy/latest/userguide/resource-kit.html#resource-kit-bucket-names): 
 
@@ -149,15 +152,21 @@ service codedeploy-agent start
 rm ./install
 ```
 
-With the **codeDeploy-agent** installed and running, lets install **Docker** and **docker-compose**. 
-
-*The latest version of docker compose in the time this article was written was v2.6.0, you can change the download link with a newer version if needed.*
+With the **codeDeploy-agent** installed and running, lets install and start **Docker**. 
 
 ```bash
-amazon-linux-extras install docker
-service docker start
-curl -L https://github.com/docker/compose/releases/download/v2.6.0/docker-compose-linux-x86_64 -o /usr/bin/docker-compose
-chmod +x /usr/bin/docker-compose
+yum install -y docker
+groupadd docker # You might get an error saying the group already exists
+
+# Add permissions for docker
+usermod -aG docker ${USER}
+
+# Configure docker to start on system startup
+systemctl enable docker.service 
+systemctl enable containerd.service
+
+# Start the docker daemon
+sudo service docker start
 ```
 
 ## **CodeDeploy configuration**
