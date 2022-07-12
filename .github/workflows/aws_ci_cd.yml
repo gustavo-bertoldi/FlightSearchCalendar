@@ -54,8 +54,8 @@ jobs:
         id: deploy
         run: |
           aws deploy create-deployment \
-            --application-name FlightCalendarApp \
-            --deployment-group-name FlightCalendarAppGroup \
+            --application-name FlightSearchAppDeploy \
+            --deployment-group-name FlightSearchAppDG \
             --deployment-config-name CodeDeployDefault.OneAtATime \
             --github-location repository=${{ github.repository }},commitId=${{ github.sha }}
 
