@@ -17,10 +17,10 @@ hooks:
       timeout: 120
       runas: ec2-user
   AfterInstall:
-    - location: /home/ec2-user/FlightSearchApp/AWS/scripts/build.sh
+    - location: /AWS/scripts/build.sh
       timeout: 300
       runas: ec2-user
   ApplicationStart:
-    - location: /home/ec2-user/FlightSearchApp/AWS/scripts/start.sh
+    - location: /AWS/scripts/start.sh
       timeout: 120
       runas: ec2-user
