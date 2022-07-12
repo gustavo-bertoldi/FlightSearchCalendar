@@ -1,7 +1,7 @@
 version: 0.0
 os: linux
 files:
-  - source: /
+  - source: ./
     destination: /home/ec2-user/FlightSearchApp/
     overwrite: true
 
@@ -13,7 +13,7 @@ permissions:
 
 hooks:
   BeforeInstall:
-    - location: /home/ec2-user/FlightSearchApp/AWS/scripts/stop.sh
+    - location: /home/ec2-user/FlightSearchApp/AWS/scripts/preinstall.sh
       timeout: 120
       runas: ec2-user
   AfterInstall:
