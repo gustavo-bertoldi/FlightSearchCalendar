@@ -4,7 +4,7 @@
   "description": "Sketch for a calendar view of cheapest flights",
   "main": "app.js",
   "scripts": {
-    "serve": "pm2 start app.js --no-daemon",
+    "serve": "pm2 start app.js",
     "watch": "npm-watch",
     "stop": "pm2 stop all"
   },
