@@ -21,6 +21,6 @@ hooks:
       timeout: 300
       runas: ec2-user
   ApplicationStart:
-    - location: /AWS/scripts/start.sh
+    - location: /home/ec2-user/FlightSearchApp/AWS/scripts/start.sh
       timeout: 120
       runas: ec2-user
