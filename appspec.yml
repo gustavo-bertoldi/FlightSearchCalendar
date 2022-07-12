@@ -13,7 +13,7 @@ permissions:
 
 hooks:
   BeforeInstall:
-    - location: /home/ec2-user/FlightSearchApp/AWS/scripts/preinstall.sh
+    - location: /AWS/scripts/preinstall.sh
       timeout: 120
       runas: ec2-user
   AfterInstall:
