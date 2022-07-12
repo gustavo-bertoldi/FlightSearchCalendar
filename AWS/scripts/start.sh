@@ -1,2 +1,1 @@
-cd /home/ec2-user/FlightSearchCalendar
-docker-compose up -d --build
+docker run -d -e AMADEUS_CLIENT_ID -e AMADEUS_CLIENT_SECRET -e AMADEUS_ENV -p $PORT:$PORT --name flight-search-app flight-search-app

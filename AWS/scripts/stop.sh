@@ -1,2 +1,2 @@
-cd /home/ec2-user/FlightSearchCalendar
-docker-compose kill
+docker stop flight-search-app
+docker rm flight-search-app

@@ -106,7 +106,7 @@ On the **Launch an instance** page, enter the following configuration. Leave no 
     - **Allow SSH traffic from**: Checked, Anywhere 0.0.0.0/0
     - **Allow HTTPs traffic from the internet**: Checked
     - **Allow HTTP traffic from the internet**: Checked
-- **Advanced settings**:
+- **Advanced details**:
   - **IAM instance profile**: EC2_Role (The one we created before)
 
 ![EC2 AMI](/AWS/imgs/EC2_config_1.png)
@@ -127,7 +127,7 @@ Save and restart the instance.
 
 ## Prepare EC2 instance
 
-With the new instance created, select it in the **Instances** list and click on connect to access it. Alternatively, you can connect to it using the ```ssh``` key generated earlier.
+With the new instance created, select it in the **Instances** list and click on connect to access it, note you will have to wait for the instance to be initilized before connecting, this process can take a couple of minutes. Alternatively, you can connect to it using the ```ssh``` key generated earlier.
 
 ![EC2 Connect](/AWS/imgs/EC2_connect.png)
 
@@ -178,9 +178,7 @@ Choose a name for the deployment group, we will use *GithubAppDG*. For the servi
 
 ![CodeDeploy Create deployment group](/AWS/imgs/CD_DG_Config1.png)
 
-For the *Environment configuration* choose **Amazon EC2 instances** and enter the name of your instance on the *Key* field. You should see **1 unique matched instance** under **Amazon EC2 instances**, otherwise verify the name and tags of your instance.
-
-![CodeDeploy Create deployment group](/AWS/imgs/CD_DG_Config2.png)
+For the *Environment configuration* choose **Amazon EC2 instances** and enter **Name** on the *Key* field and the name of your isntance on the *Value* field. You should see **1 unique matched instance** under **Amazon EC2 instances**, otherwise verify the name and tags of your instance.
 
 For the *Agent configuration with AWS Systems Manager* leave as default. Finally, select **CodeDeployDefault.OnceAtATime** under *deployment settings* and disable load balancing under *Load balancer*. Click on **Create deployment group**.
 

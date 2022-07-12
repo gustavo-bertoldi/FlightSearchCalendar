@@ -1,8 +1,8 @@
 version: 0.0
 os: linux
 files:
-  - source: .
-    destination: /home/ec2-user/FlightSearchCalendar/
+  - source: /
+    destination: /home/ec2-user/FlightSearchApp/
     overwrite: true
 
 permissions:
@@ -12,7 +12,15 @@ permissions:
     group: ec2-user
 
 hooks:
+  BeforeInstall:
+    - location: /home/ec2-user/FlightSearchApp/AWS/scripts/stop.sh
+      timeout: 120
+      runas: ec2-user
+  AfterInstall:
+    - location: /home/ec2-user/FlightSearchApp/AWS/scripts/build.sh
+      timeout: 300
+      runas: ec2-user
   ApplicationStart:
-    - location: AWS/scripts/start.sh
-      timeout: 1200
+    - location: /home/ec2-user/FlightSearchApp/AWS/scripts/start.sh
+      timeout: 120
       runas: ec2-user
