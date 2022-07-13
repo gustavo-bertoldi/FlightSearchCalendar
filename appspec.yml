@@ -13,7 +13,7 @@ permissions:
 
 hooks:
   BeforeInstall:
-    - location: /AWS/scripts/preinstall.sh
+    - location: /AWS/scripts/stop.sh
       timeout: 120
       runas: ec2-user
   AfterInstall:
