@@ -1,5 +1,5 @@
 <script></script>
 
 <main>
-	<h1>CD page</h1>
+	<h1>CD test deploy</h1>
 </main>

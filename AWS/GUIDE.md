@@ -13,77 +13,71 @@
 
 ## Prerequisites
 - An account on AWS, all the features used are available in the free tier.
-- A Github account and a repository containing the application you want to deploy. In this tutorial we will use **docker-compose** to launch our application, so you need to prepare your application for **Docker**.
+- A Github account and a repository containing the application you want to deploy. In this tutorial we will use a dockerized application.
 - Optionally you can use the same application we use in the guide, clone or fork the AWS branch of the repository [here](https://github.com/gustavo-bertoldi/FlightSearchCalendar/tree/AWS).
 
 # Configuring AWS
 
-First we are going to set up **IAM Roles** in AWS that we are going to use in the EC2 instance and CodeDeploy.
+First we are going to set up **IAM Roles** in AWS that we are going to use in the EC2 instance and CodeDeploy. Role allows EC2 instance to call AWS services on your behalf, avoiding aditional authentification steps and facilitating the configuration.
 
-## **EC2 role**
+---
 
-Once logged in to AWS, search **IAM**, in the **Identity and Access Management (IAM)** menu in the left, select **Roles** and then **Create role** in the right.
+## EC2 role
 
-![IAM home](/AWS/imgs/IAM.png)
+This role is responsible for allowing the following:
+* Allow the instance to access the **CodeDeploy** service.
+* Allow the instance to access secrets from **Secets Manager**.
+* Allow the instance to push logs to the **CloudWatch** service.
 
-Select **AWS service** as **Trusted entity type** and **EC2** as **Use case** and click next.
-
-![IAM trusted entity](/AWS/imgs/IAM_t_entity.png)
-
-On the permissions page add the following permission and click on next.
-
- - AmazonEC2RoleForAWSCodeDeploy
-
-
-![IAM Permissions](/AWS/imgs/IAM_permissions.png)
-
-On the review page, give the role a name, we are going to use **EC2_Role**, then click on **Create role**. Back in the **Roles** page you should now see your newly created role. Click on it, and in the **Trust relationships** tab, click on **Edit trust policy**.
-
-![IAM Trusted relationships](/AWS/imgs/IAM_tr.png)
-
-In the edit page, paste the following code and click on **Update policy**.
+To start, go to the **IAM** service using the search bar in tou AWS dashboard.
+First we are going to create a new **police** allowing the instance to push logs to **CloudWatch** service. 
+In the **IAM** service, in the menu on the left, select **Policies** under **Access management**, then select **Create policy** on the right. A new screen is going to open, select the **JSON** tab and paste the following code in the text field:
 
 ```json
 {
-	"Version": "2012-10-17",
-	"Statement": [
-		{
-			"Effect": "Allow",
-			"Principal": {
-				"Service": "ec2.amazonaws.com"
-			},
-			"Action": "sts:AssumeRole"
-		}
-	]
-}
-```
-
-## **CodeDeploy role**
-
-Now we are going to create a role for the **CodeDeploy** service. To do it follow the same steps as for the **EC2 role**. We are going to name it **CodeDeploy_Role**. In the permissions screen, add the following permissions:
-
-  - AmazonEC2FullAccess
-  - AWSCodeDeployFullAccess
-  - AdministratorAccess
-  - AWSCodeDeployRole
-
-Once the role is created, go to **Trust relationships**, paste the following code and hit **Update policy**.
- ```json
- {
     "Version": "2012-10-17",
     "Statement": [
         {
+            "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "logs:CreateLogGroup"
+            ],
             "Effect": "Allow",
-            "Principal": {
-                "Service": "codedeploy.amazonaws.com"
-            },
-            "Action": "sts:AssumeRole"
+            "Resource": "*"
         }
     ]
 }
- ```
+```
 
-## **GitHub User**
+Click on **Next: Tags**, and then **Next: Review**. In the **Review police** window, enter *CloudWatchPushLogs* as the police's name and click on **Create police** in the page's bottom.
+
+Once the police is created, go back to the **IAM** service dashboard and in the menu on the left, click on **Roles** under **Access management** and then on **Create role** in the right, a new screen in going to open.
+
+Select **AWS service** under **Trusted entity type** and **EC2** under **Use case** and click on next.
+
+In the next screen you will have the possibility to attach policies to your role. We need the following policies:
+* AmazonEC2RoleforAWSCodeDeploy
+* SecretManagerReadWrite
+* CloudWatchPushLogs
+
+Yo can search policies using the search bar and select them using the checkbox to the left of its name. Select the three listed polices and click on next. In the **Name, review and create** window enter ***EC2Role*** for the name, leaving the rest as default, and click on **Create role** on the bottom.
+
+---
+
+## CodeDeploy role
+
+This role will be responsible for the following:
+* Providing full access to Amazon EC2 instances. Allowing the service to download the source files in the instance and execute scripts.
+* Provides CodeDeploy service access to expand tags and interact with Auto Scaling on your behalf.
+
+Now we are going to create a role for the **CodeDeploy** service. To do it follow the same steps as before. We are going to name it **CodeDeployRole**. In the permissions screen, add the following permissions:
+* AmazonEC2FullAccess  
+* AWSCodeDeployRole
+
+---
+
+## GitHub User
 
 Now let's create an IAM user, which will be used by GitHub to connect to our instance. In the **Identity and Access Management (IAM)** menu in the left, select **Users** under **Access management** and then **Add users** in the right. Choose a name and select **Access key - Programmatic access** under *Select AWS access type*.
 Next, on the permissions screen, select **Attach existing policies directly** and select **AWSCodeDeployFullAccess** from the policies.
