@@ -35,8 +35,6 @@ jobs:
           AMADEUS_ENV: test
         run: | 
           npm install
-          npm run serve
-          npm run stop
 
   deploy:
     name: Deploy to AWS EC2 instance
