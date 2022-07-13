@@ -6,7 +6,10 @@
 ## Introduction to the services
 - **Github Actions**: This service allows us to execute code triggered by an event in the repository. For example we can run a tests suit triggered by the push action into a specific branch. This guide will show you how to trigger a build and deploy process automatically when code is pushed into a repository.
 - **AWS EC2**: This service allows us to run a server instance on the cloud. We are going to use it to host a linux instance and use it to host our application.
--  **AWS CodeDeploy**: This service manages the code deployment to our instance in AWS EC2. It injects the files from the Github repository into our instance and execute the necessary commands to start the application.
+- **AWS CodeDeploy**: This service manages the code deployment to our instance in AWS EC2. It injects the files from the Github repository into our instance and execute the necessary commands to start the application.
+- **AWS Secrets Manager**: This service is used to store secret credentials that are securely encrypted. We will use this service to store ou Amadeus credentials so we don't need to hardcode it anywhere in our files.
+- **AWS CloudWatch**: This service allow for monitoring and observability of AWS resources. We will configure it to notify us if there is something wrong with our instance and automatically reboot it if needed.
+-  
 
 ## Prerequisites
 - An account on AWS, all the features used are available in the free tier.

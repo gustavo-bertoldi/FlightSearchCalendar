@@ -1,3 +1,3 @@
 export AMADEUS_CLIENT_ID=$(aws secretsmanager get-secret-value --region eu-west-1 --secret-id FlightSearchApp/AMADEUS_CLIENT_ID --query SecretString --output text | jq -r .AMADEUS_CLIENT_ID)
 export AMADEUS_CLIENT_SECRET=$(aws secretsmanager get-secret-value --region eu-west-1 --secret-id FlightSearchApp/AMADEUS_CLIENT_SECRET --query SecretString --output text | jq -r .AMADEUS_CLIENT_SECRET)
-docker run -d -e AMADEUS_CLIENT_ID -e AMADEUS_CLIENT_SECRET -e AMADEUS_ENV=test -p 80:3000 --name flight-search-app flight-search-app
+docker run -d -e AMADEUS_CLIENT_ID -e AMADEUS_CLIENT_SECRET -e AMADEUS_ENV=test - EC2_INSTANCE_IP='54.75.219.41' -p 80:3000 --name flight-search-app flight-search-app
