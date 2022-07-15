@@ -1,7 +1,7 @@
 FROM node:16
 
 ARG PORT=3000
-ARG EC2_INSTANCE_IP
+ARG EC2_INSTANCE_IP=localhost:${PORT}
 
 WORKDIR /front
 COPY ./front/package.json .
