@@ -7,7 +7,6 @@ WORKDIR /front
 COPY ./front/package.json .
 COPY ./front/svelte.config.js .
 COPY ./front/tsconfig.json .
-COPY ./front/.npmrc .
 COPY ./front/static ./static
 COPY ./front/src ./src
 
