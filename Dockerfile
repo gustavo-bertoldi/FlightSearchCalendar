@@ -6,6 +6,7 @@ ARG EC2_INSTANCE_IP
 WORKDIR /front
 COPY ./front/package.json .
 COPY ./front/svelte.config.js .
+COPY ./front/vite.config.js .
 COPY ./front/tsconfig.json .
 COPY ./front/static ./static
 COPY ./front/src ./src
