@@ -1,6 +1,6 @@
 {
-	"name": "fsa",
-	"version": "0.0.1",
+	"name": "flight-search-app",
+	"version": "1.0",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
