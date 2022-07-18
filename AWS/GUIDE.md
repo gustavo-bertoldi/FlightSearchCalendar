@@ -9,7 +9,6 @@
 - **AWS CodeDeploy**: This service manages the code deployment to our instance in AWS EC2. It injects the files from the Github repository into our instance and execute the necessary commands to start the application.
 - **AWS Secrets Manager**: This service is used to store secret credentials that are securely encrypted. We will use this service to store ou Amadeus credentials so we don't need to hardcode it anywhere in our files.
 - **AWS CloudWatch**: This service allow for monitoring and observability of AWS resources. We will configure it to notify us if there is something wrong with our instance and automatically reboot it if needed.
--  
 
 ## Prerequisites
 - An account on AWS, all the features used are available in the free tier.
@@ -79,15 +78,31 @@ Now we are going to create a role for the **CodeDeploy** service. To do it follo
 
 ## GitHub User
 
-Now let's create an IAM user, which will be used by GitHub to connect to our instance. In the **Identity and Access Management (IAM)** menu in the left, select **Users** under **Access management** and then **Add users** in the right. Choose a name and select **Access key - Programmatic access** under *Select AWS access type*.
-Next, on the permissions screen, select **Attach existing policies directly** and select **AWSCodeDeployFullAccess** from the policies.
+Now let's create an IAM user, which will be used by GitHub to connect to our instance. Go to the **IAM** service and in the **Identity and Access Management (IAM)** menu in the left, select **Users** under **Access management** and then **Add users** in the right. Choose a name and select **Access key - Programmatic access** under **Select AWS access type**.
+Next, on the permissions screen, select **Attach existing policies directly** and add **AWSCodeDeployFullAccess** from the policies.
 Click on next leaving everything as default until you see the user is created successfully, you will be shown a screen containing the user's **Access key ID** and **Secret access key**, keep both in a safe place, you will need them later in the tutorial.
 
-## **Create EC2 instance**
+## Configure CloudWatch
+In this section we are going to configure **CloudWatch** for our application.
+
+Go to the **CloudWatch** service and select **Log groups** under **Logs** on the menu in the left. Now select **Create log group** on the right. Give it a name and select the **Retention setting** that's most convenient for your needs and click on **Create** on the bottom of the page. Now select the log group you just created, and in the bottom portion select **Create log stream** and give it a name.
+
+## Configure Secrets Manager
+
+For this section we are going to configure AWS's **Secrets Manager** service to securely store our Amadeus credentials.
+Go to the **Secrets Manager dashboard** and click on **Store a new secret**. Seelct **Other type of secret** under **Secret type** and add the key value pairs for `AMADEUS_CLIENT_ID` and `AMADEUS_CLIENT_SECRET` keys and click on next.
+
+Add a name that alow you to quickly find your secret, for example `MyApp/AMADEUS_CLIENT_ID`. Leave everything else as default and click on **Next**.
+
+In the next window you can configure automatic rotation of your secrets if you want, as we don't need this feature for our Amadeus credentials you can just click on **Next**.
+
+Next you are going to be shown the review page. In the bottom of this page there is some code examples on how to retrieve your secret using AWS SDK in various languages. Click on **Store** to save it.
+
+## Create an EC2 instance
+
+In this step we will create a virtualized linux machine, in which our docker container will run. We will allow SSH, HTTP and HTTPS traffic, but you can custonomize your instance's network polices later.
 
 Go to the **EC2** service and on the **EC2 Dashboard** click on **Launch Instance**
-
-![EC2 Dashboard](/AWS/imgs/EC2_launch.png)
 
 On the **Launch an instance** page, enter the following configuration. Leave no mentioned settings as default:
 
@@ -97,73 +112,84 @@ On the **Launch an instance** page, enter the following configuration. Leave no 
   - **Amazon Machine Image (AMI)**: Amazon Linux 2 AMI (HVM) - Kernel 5.10, SSD Volume Type
   - **Architecture**: 64-bit (x86)
 - **Instance type**: t2.micro
-- **Key pair (login)**: Here you can create a key pair if you want to connect to your instance using ```ssh``` later.
+- **Key pair (login)**: Optional: here you can create a key pair if you want to connect to your instance using ```ssh``` later.
 - **Network settings**:
   - **Firewall (security groups)**: Create security group
     - **Allow SSH traffic from**: Checked, Anywhere 0.0.0.0/0
     - **Allow HTTPs traffic from the internet**: Checked
     - **Allow HTTP traffic from the internet**: Checked
 - **Advanced details**:
-  - **IAM instance profile**: EC2_Role (The one we created before)
+  - **IAM instance profile**: EC2Role (The one we created before)
 
-![EC2 AMI](/AWS/imgs/EC2_config_1.png)
-![EC2 Network](/AWS/imgs/EC2_net.png)
 
 Click on launch instance to finish creation.
 
-During creation we allowed **HTTP**, **HTTPS** and **SSH** traffic, as the backend of ou application responds on port `3000`, we have to create a new network rule. On the **Instances** dashboard of the **EC2** service, click on the instance you just created. On the **Instance summary** page, on the bottom, select the **Security** tab, and click on **Security groups**.
-
-![EC2 Security Group](/AWS/imgs/EC2_SG.png)
-
-A new screen will open, on the bottom of the page you can see a list of **Inbound rules**, click on the button **Edit inbound rules** on the right.
-In the new screen, click on the button **Add rule** on the bottom and select **Custom TCP** type, `3000` port and `0.0.0.0/0`.
-
-![EC2 Security group inbound rules](/AWS/imgs/EC2_SG_Rules.png)
-
-Save and restart the instance.
+To personalize your network security group and allow other traffic, Go to the **EC2** service and select the instance you created, on the **Instance summary** page, on the bottom, select the **Security** tab, and click on **Security groups**, you'll be able to edit the inbound and outbound rules of your instance.
 
 ## Prepare EC2 instance
 
-With the new instance created, select it in the **Instances** list and click on connect to access it, note you will have to wait for the instance to be initilized before connecting, this process can take a couple of minutes. Alternatively, you can connect to it using the ```ssh``` key generated earlier.
-
-![EC2 Connect](/AWS/imgs/EC2_connect.png)
-
-On the next page click on **Connect** on the bottom to open a terminal in the instance.
+With the new instance created, select it in the **Instances** list and click on connect to access it, note you will have to wait for the instance to be initilized before connecting, this process can take a couple of minutes. Alternatively, you can connect to it using the `ssh` key generated earlier.
 
 Now we are going to install the necessary services in the instance in order to run our application and the automatic deployment.
 
-### Install CodeDeploy Agent
+### Install CodeDeploy Agent 
 Run the followings commands to install the **codeDeploy-agent**:
 
-To get the correct link to use in the ```wget``` command you need to replace *bucket-name* and *region-identifier* with the information from your AWS region, which can be found [here](https://docs.aws.amazon.com/codedeploy/latest/userguide/resource-kit.html#resource-kit-bucket-names): 
+To get the correct link to use in the `wget` command you need to replace *bucket-name* and *region-identifier* with the information from your AWS region, which can be found [here](https://docs.aws.amazon.com/codedeploy/latest/userguide/resource-kit.html#resource-kit-bucket-names): 
 
 ```bash
-sudo su
-yum update
-yum install -y ruby
-yum install wget
-wget https://bucket-name.s3.region-identifier.amazonaws.com/latest/install
+sudo yum update
+sudo yum install -y ruby
+sudo yum install wget
+sudo wget https://bucket-name.s3.region-identifier.amazonaws.com/latest/install
 chmod +x ./install
-./install auto
-service codedeploy-agent start
+sudo ./install auto
+sudo service codedeploy-agent start
 rm ./install
 ```
 
-With the **codeDeploy-agent** installed and running, lets install and start **Docker**. 
+### Install Docker
 
 ```bash
-yum install -y docker
-groupadd docker # You might get an error saying the group already exists
+sudo yum install -y docker
+sudo groupadd docker # You might get an error saying the group already exists, ignore it
 
 # Add permissions for docker
-usermod -aG docker ${USER}
+sudo usermod -aG docker ${USER}
 
 # Configure docker to start on system startup
-systemctl enable docker.service 
-systemctl enable containerd.service
+sudo systemctl enable docker.service 
+sudo systemctl enable containerd.service
 
 # Start the docker daemon
 sudo service docker start
+```
+
+### Install CloudWatch Agent
+
+Run the following command to install the **CloudWatch Agent**.
+
+```bash
+sudo yum install amazon-cloudwatch-agent
+```
+
+Create a new file in `/etc/docker/daemon.json` containing the following, dont forget to replace the fields with your CloudWatch information.
+
+```json
+{
+  "log-driver": "awslogs",
+  "log-opts": {
+    "awslogs-region": "YOUR_REGION",
+    "awslogs-group" : "YOUR_LOGS_GROUP",
+    "awslogs-stream": "YOUR_STREAM"
+  }
+}
+```
+
+Then restart the docker service with the following command:
+
+```bash
+sudo service docker restart
 ```
 
 ## **CodeDeploy configuration**
