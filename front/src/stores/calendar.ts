@@ -99,10 +99,10 @@ export const selectedPriceCell: Writable<CellDate> = writable();
 export const calendar: Writable<CalendarPrices> = writable({});
 export const departureDates: Writable<CalendarDate[]> = writable([]);
 export const returnDates: Writable<CalendarDate[]> = writable([]);
-const currentDeparture: Readable<DateString | undefined> = derived(
-	departureDates,
-	($v) => $v[3]?.date
-);
+
+//Departures and returns array always have 7 dates, 3 before and 3 after the current
+//So the current date is at index 3
+const currentDeparture: Readable<DateString | undefined> = derived(departureDates, ($v) => $v[3]?.date);
 const currentReturn: Readable<DateString | undefined> = derived(returnDates, ($v) => $v[3]?.date);
 departureDateFormatted.subscribe((v) => departureDates.set(datesArray(v)));
 returnDateFormatted.subscribe((v) => returnDates.set(datesArray(v)));
