@@ -135,6 +135,7 @@
 		$returnDate = new Date(_returnDate);
 		$offersResult = undefined;
 		$selectedPriceCell = undefined;
+    $calendar = {};
 		$flightSearch()
 			.then((res) => {
 				$offersResult = res;

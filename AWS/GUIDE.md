@@ -194,41 +194,28 @@ sudo service docker restart
 
 ## **CodeDeploy configuration**
 
-Search for **CodeDeploy** on AWS, on its deploy dashboard select **Create Application**.
+Search for **CodeDeploy** on AWS, In the menu on the left select **Getting started** under **Deploy** and then **Create application** on the right.
 
-![CodeDeploy Dashboard](/AWS/imgs/CD_Dash.png)
-
-Create an application with any name, we will use *GithubApp*, and **EC2/On-premises** compute platform. You will need the name of the application later when configuring GitHub.
-
-![CodeDeploy Create Application](/AWS/imgs/CD_Create_App.png)
+Create an application with any name, we will use *MyAppDeploy*, and **EC2/On-premises** compute platform. You will need the name of the application later when configuring GitHub.
 
 Once the application is created, go to the **Applications** dashboard, under **Deploy** in the menu on the left. Click on your newly created application and then on **Create deployment group**.
+Choose a name for the deployment group, we will use *MyAppDG*. For the service role choose the IAM role we created early (**CodeDeployRole**) and for the deployment type choose **In-place**. You will need the name of the deployment group later when configuring GitHub.
 
-![CodeDeploy Create deployment group](/AWS/imgs/CD_Create_DG.png)
+For the **Environment configuration** choose **Amazon EC2 instances** and enter ***Name*** on the **Key** field and the name of your isntance on the **Value** field. You should see **1 unique matched instance** under **Amazon EC2 instances**, otherwise verify the name and tags of your instance.
 
-Choose a name for the deployment group, we will use *GithubAppDG*. For the service role choose the IAM role we created early (**CodeDeploy_Role**) and for the deployment type choose **In-place**. You will need the name of the deployment group later when configuring GitHub.
-
-![CodeDeploy Create deployment group](/AWS/imgs/CD_DG_Config1.png)
-
-For the *Environment configuration* choose **Amazon EC2 instances** and enter **Name** on the *Key* field and the name of your isntance on the *Value* field. You should see **1 unique matched instance** under **Amazon EC2 instances**, otherwise verify the name and tags of your instance.
-
-For the *Agent configuration with AWS Systems Manager* leave as default. Finally, select **CodeDeployDefault.OnceAtATime** under *deployment settings* and disable load balancing under *Load balancer*. Click on **Create deployment group**.
-
-![CodeDeploy Create deployment group](/AWS/imgs/CD_DG_Config3.png)
-
-Now that all the necessary configuration on AWS side is done, lets pass to the GitHub.
+For the **Agent configuration with AWS Systems Manager** leave as default. Finally, select **CodeDeployDefault.OnceAtATime** under **Deployment settings** and disable load balancing under **Load balancer**. Click on **Create deployment group**.
 
 ## **Application configuration**
-Now that all the needed services are correctly et in AWS, we have to create an ```appspec.yml``` file on the root directory of our application's repository, which will contain the deployment configuration.
+At this point, all the needed services should be correctly created and configures on AWS. In thi section we are going to create an `appspec.yml` file to tell AWS how to build and deploy our application.
 
-Paste the following code into your ```appspec.yml``` file, we will go through its details in the following. PLease note the following configuration is meant to be used to deploy our example application, you can consult detail on **CodeDeploy AppSpec** [here](https://docs.aws.amazon.com/codedeploy/latest/userguide/reference-appspec-file.html) and adapt to your specific needs.
+Create an `appspec.yml` file on the root of your project. If you have cloned oue example appplication you can paste the following content into your `appspec.yml` file. Otherwise you can check the details on how to write this file [here](https://docs.aws.amazon.com/codedeploy/latest/userguide/reference-appspec-file.html).
 
 ```yml
 version: 0.0
 os: linux
 files:
-  - source: .
-    destination: /home/ec2-user/MyRepo/
+  - source: /
+    destination: /home/ec2-user/FlightSearchApp
     overwrite: true
 
 permissions:
@@ -238,44 +225,41 @@ permissions:
     group: ec2-user
 
 hooks:
-ApplicationStop:
-    - location: AWS/scripts/stop.sh
-      timeout: 30
+  BeforeInstall:
+    - location: /AWS/scripts/stop.sh
+      timeout: 120
       runas: ec2-user
-
+  AfterInstall:
+    - location: /AWS/scripts/build.sh
+      timeout: 300
+      runas: ec2-user
   ApplicationStart:
-    - location: AWS/scripts/start.sh
-      timeout: 1200
+    - location: /AWS/scripts/start.sh
+      timeout: 120
       runas: ec2-user
 ```
 
 Here is a quick description of each section on this **AppSpec** file:
   - `version`: version number, usually 0.0
-  - `os`: OS run in the target instance
-  - `files`: In this section you can specify which files are going to be copied to your instance, using source and destination directories. In this examples we copied all the code in the repository's root `.` to `/home/ec2-user/MyRepo/` in our instance.
-  - `permissions`: Permission with which the scripts are going to be executed
-  - `hooks`: Steps of the deployment process, after which the specified code is going to be executed. In this example, we use the `ApplicationStop` hook, which is commonly used to stop the current version of the application to prepare for the new deployment. Then we use the  `ApplicationStart` hook to restart the services using the new version. You can get more detail on AWS CodeDeploy hooks [here](https://docs.aws.amazon.com/codedeploy/latest/userguide/reference-appspec-file-structure-hooks.html).
+  - `os`: OS running in the target instance
+  - `files`: In this section you can specify which files are going to be copied to your instance, using source and destination directories. In this examples we copied all the code in the repository's root `.` to `/home/ec2-user/FlightSearchApp/` in our instance.
+  - `permissions`: Permission with which the scripts are going to be executed, we are going to use the standard user of AWS's EC2 instances. `ec2-user`.
+  - `hooks`: Steps of the deployment process, after which the specified code is going to be executed. In this example, we use the `BeforeInstall` hook, which triggered before files are copied, we use it to stop our current container and delete previous images. Then we use the  `AfterInstall` hook, which is triggered after the new files were copied to build the docker images. Finally we use `ApplicationStart` hook to run our docker image. You can get more detail on AWS CodeDeploy hooks [here](https://docs.aws.amazon.com/codedeploy/latest/userguide/reference-appspec-file-structure-hooks.html).
 
 ## **Scripts**
-In this example we use two simple scripts, `stop.sh` to stop the application that is current running on the instance, in preparation for the deployment, and then `start.sh` to restart the services using the new files deployed.
+In this example we use three simple scripts:
+* `stop.sh` : stops the current continer and erase previous images. Prepara for new version.
+* `build.sh` : builds the docker image.
+* `start.sh` : fetch Amadeus credentials and launch the docker container.
 
-```sh
-#start.sh
-cd /home/ec2-user/FlightSearchCalendar
-docker-compose up -d --build
-```
-
-```sh
-#stop.sh
-cd /home/ec2-user/FlightSearchCalendar
-docker-compose kill
-```
+You can view the detailed implementation of each script in the folder `/AWS/scripts`.
 
 # Configuring GitHub
 
-Lets start by setting up our GitHub Action. Create a file in `.github/workflows/aws_ci_cd.yml`. The `.github` folder must be located on the root of your repository. In this tutorial we will create a simple workflow triggered by the **push** action in our repository `master` branch. The workflow consists in a build of the project, followed by the deployment on AWS. You can get more information on GitHub action [here](https://docs.github.com/en/actions).
+At this point all the configuration on AWS side shoulb be completed correctly. We are now going to configure a **GitHub Action** to trigger the deployment when new code is pushed to the repository.
+Lets start by setting up our GitHub Action. Create the file `.github/workflows/aws_ci_cd.yml`. The `.github` folder must be located on the root of your repository. In this tutorial we will create a simple workflow triggered by the **push** action in our repository's `master` branch. The workflow consists in a build of the project, followed by the deployment on AWS. We build the project first to assure we wont deploy malfunctionning code. You can get more information on GitHub action [here](https://docs.github.com/en/actions).
 
-To build and assure the functioning of the backend we need the Amadeus credentials. Also, to deploy to AWS we need our IAM user credentials. It's never a good practice to hard-code secret credentials on our code, so we will use the GitHub secrets feature to store this information encrypted.
+To build and assure the functioning of the backend we need the Amadeus credentials. Also, to deploy to AWS we need our IAM user credentials. It's never a good practice to hard-code secret credentials directly in the code, so we will use  GitHub's secrets feature to store this information securely.
 Go to the **Settings** tab in your GitHub repository and in the menu on the left choose **Secrets** and then **Actions**. To add a new secret click on the button **New repository secret** on the top right.
 For our example you should add the following secrets:
 
@@ -292,7 +276,7 @@ name: AWS CI/CD
 on:
   push:
       branches:
-        - master
+        - AWS
         
 jobs:
   build:
@@ -300,10 +284,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout AWS branch
+        uses: actions/checkout@v3
+        with:
+          ref: AWS
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 16
+
+      - name: Build frontend
+        working-directory: ./front
+        run: |
+          npm install
+          npm run build
     
       - name: Build backend
         working-directory: ./back
@@ -311,17 +306,9 @@ jobs:
           AMADEUS_CLIENT_ID: ${{ secrets.AMADEUS_CLIENT_ID }}
           AMADEUS_CLIENT_SECRET: ${{ secrets.AMADEUS_CLIENT_SECRET }}
           PORT: 3000
-          CORS_ALLOW: localhost:5000
-          ENV: GITHUB
+          AMADEUS_ENV: test
         run: | 
           npm install
-          npm run serve 
-    
-      - name: Build frontend
-        working-directory: ./front
-        run: |
-          npm install
-          npm run build
 
   deploy:
     name: Deploy to AWS EC2 instance
@@ -339,10 +326,13 @@ jobs:
         id: deploy
         run: |
           aws deploy create-deployment \
-            --application-name GithubApp \
-            --deployment-group-name GithubAppDG \
+            --application-name FlightSearchAppDeploy \
+            --deployment-group-name FlightSearchAppDG \
             --deployment-config-name CodeDeployDefault.OneAtATime \
             --github-location repository=${{ github.repository }},commitId=${{ github.sha }}
+
+
+
 
 ```
 The `name` section is just the name of the workflow, that will be shown on GitHub Actions dashboard. The `on` section describes what will trigger the workflow, in our case a **push** in the `master` branch.
