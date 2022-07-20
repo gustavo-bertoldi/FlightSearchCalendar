@@ -173,7 +173,7 @@ Run the following command to install the **CloudWatch Agent**.
 sudo yum install amazon-cloudwatch-agent
 ```
 
-Create a new file in `/etc/docker/daemon.json` containing the following, dont forget to replace the fields with your CloudWatch information.
+Create a new file in `/etc/docker/daemon.json` containing the following, dont forget to replace the fields with your CloudWatch information. This will tell Docker to send the containers' logs to **CloudWatch**.
 
 ```json
 {
@@ -206,9 +206,9 @@ For the **Environment configuration** choose **Amazon EC2 instances** and enter 
 For the **Agent configuration with AWS Systems Manager** leave as default. Finally, select **CodeDeployDefault.OnceAtATime** under **Deployment settings** and disable load balancing under **Load balancer**. Click on **Create deployment group**.
 
 ## **Application configuration**
-At this point, all the needed services should be correctly created and configures on AWS. In thi section we are going to create an `appspec.yml` file to tell AWS how to build and deploy our application.
+At this point, all the needed services should be correctly created and configures on AWS. In this section we are going to create an `appspec.yml` file to tell AWS how to build and deploy our application.
 
-Create an `appspec.yml` file on the root of your project. If you have cloned oue example appplication you can paste the following content into your `appspec.yml` file. Otherwise you can check the details on how to write this file [here](https://docs.aws.amazon.com/codedeploy/latest/userguide/reference-appspec-file.html).
+If you used our example application you can use the `appspec.yml` file we provided. Otherwise you can check the details on how to write this file [here](https://docs.aws.amazon.com/codedeploy/latest/userguide/reference-appspec-file.html).
 
 ```yml
 version: 0.0
@@ -248,72 +248,38 @@ Here is a quick description of each section on this **AppSpec** file:
 
 ## **Scripts**
 In this example we use three simple scripts:
-* `stop.sh` : stops the current continer and erase previous images. Prepara for new version.
-* `build.sh` : builds the docker image.
+* `stop.sh` : stops the current continer and erase previous images. Prepare for new version.
+* `build.sh` : builds the new docker image.
 * `start.sh` : fetch Amadeus credentials and launch the docker container.
 
-You can view the detailed implementation of each script in the folder `/AWS/scripts`.
+You can check the detailed implementation of each script in the folder `/AWS/scripts`.
 
 # Configuring GitHub
 
-At this point all the configuration on AWS side shoulb be completed correctly. We are now going to configure a **GitHub Action** to trigger the deployment when new code is pushed to the repository.
-Lets start by setting up our GitHub Action. Create the file `.github/workflows/aws_ci_cd.yml`. The `.github` folder must be located on the root of your repository. In this tutorial we will create a simple workflow triggered by the **push** action in our repository's `master` branch. The workflow consists in a build of the project, followed by the deployment on AWS. We build the project first to assure we wont deploy malfunctionning code. You can get more information on GitHub action [here](https://docs.github.com/en/actions).
+At this point all the configuration on AWS side should be completed correctly. We are now going to configure a **GitHub Actions** to trigger the deployment when new code is pushed to the repository.
+Lets start by setting up our GitHub Action. Create the file `.github/workflows/aws_ci_cd.yml`. The `.github` folder must be located on the root of your repository. In this tutorial we will create a simple workflow triggered by the **push** action in our repository's `master` branch. You can get more information on GitHub Actions [here](https://docs.github.com/en/actions).
 
-To build and assure the functioning of the backend we need the Amadeus credentials. Also, to deploy to AWS we need our IAM user credentials. It's never a good practice to hard-code secret credentials directly in the code, so we will use  GitHub's secrets feature to store this information securely.
+To deploy to AWS we need our IAM user credentials. It's never a good practice to hard-code secret credentials directly in the code, so we will use  GitHub's secrets feature to store this information securely.
 Go to the **Settings** tab in your GitHub repository and in the menu on the left choose **Secrets** and then **Actions**. To add a new secret click on the button **New repository secret** on the top right.
 For our example you should add the following secrets:
 
-  - AMADEUS_CLIENT_ID
-  - AMADEUS_CLIENT_SECRET
-  - AWS_ID
-  - AWS_SECRET
-  - AWS_REGION
+* AWS_ID
+* AWS_SECRET
+* AWS_REGION
 
-With the secrets set, paste the following content to your `aws_ci_cd.yml` file. We will go through each section in the following. 
+With the secrets set, paste the following content to your `aws_ci_cd.yml` file. We will go through each section in the following. Don't forget to replace `YOUR_DEPLOYMENT_APPLICATION_NAME` and `YOUR_DEPLOYMENT_GROUP_NAME` with your **CodeDeploy** information.
 
 ```yml
 name: AWS CI/CD
 on:
   push:
       branches:
-        - AWS
+        - master
         
 jobs:
-  build:
-    name: Build project
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout AWS branch
-        uses: actions/checkout@v3
-        with:
-          ref: AWS
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-
-      - name: Build frontend
-        working-directory: ./front
-        run: |
-          npm install
-          npm run build
-    
-      - name: Build backend
-        working-directory: ./back
-        env:
-          AMADEUS_CLIENT_ID: ${{ secrets.AMADEUS_CLIENT_ID }}
-          AMADEUS_CLIENT_SECRET: ${{ secrets.AMADEUS_CLIENT_SECRET }}
-          PORT: 3000
-          AMADEUS_ENV: test
-        run: | 
-          npm install
-
   deploy:
     name: Deploy to AWS EC2 instance
     runs-on: ubuntu-latest
-    needs: [build]
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -326,36 +292,21 @@ jobs:
         id: deploy
         run: |
           aws deploy create-deployment \
-            --application-name FlightSearchAppDeploy \
-            --deployment-group-name FlightSearchAppDG \
+            --application-name YOUR_DEPLOYMENT_APPLICATION_NAME \
+            --deployment-group-name YOUR_DEPLOYMENT_GROUP_NAME \
             --deployment-config-name CodeDeployDefault.OneAtATime \
             --github-location repository=${{ github.repository }},commitId=${{ github.sha }}
-
-
-
-
 ```
+
 The `name` section is just the name of the workflow, that will be shown on GitHub Actions dashboard. The `on` section describes what will trigger the workflow, in our case a **push** in the `master` branch.
 
-The `jobs` sections describes the actions itself. In this example we defined two jobs, `build` and `deploy`. Under each job we must define its ```name```, its `runs-on` and its `steps`. The `runs-on` section describes the environment in which the code defined in steps will be run, we will use a linux environment thanks to the `ubuntu-latest` value. We can optionally define a `needs` key, which allows us to execute the jobs in series, in our example we have defined that the job `deploy` needs `build`, this will guarantee that the former will be run after the completion of the latter. 
-
-## Build job
-The build job is run to assure that the code can be built before deploying it to AWS. This following will guide you through the build process of our example app, if you are using your own app you may adapt it.
-
-
-Our first step consists on setting up Node.js, to do so we can use a pre-defined action called `actions/setup-node@v3` and specify `node-version` under the key `with` of our step. This step is executed on the root directory, so we don't need to specify the `working-directory`.
-
-
-Next we are going to build the backend, with is located in the `back` folder. To build the backend and assure it's running correctly, we need to pass our Amadeus credentials as environment variables, this can be done easily using the `env` key with a new key for each environment variable. GitHub Secrets data we defined before can be easily accessed using `${{ secrets.YOUR_KEY }}`. Finally, under the `run` key you can set the commands that are will be run in this step, in our case, `npm install` and `npm run serve`.
-
-Next we are going to build the frontend, following the same logic we set the `working-directory` and the `run` commands.
+The `jobs` sections describes the actions itself. In this example we defined only one job `deploy` as the build part is done directly in AWS. Under each job we must define its `name`, its `runs-on` and its `steps`. The `runs-on` section describes the environment in which the code defined in the step will be run, we will use a linux environment thanks to the `ubuntu-latest` value.
 
 ## Deploy job
-Now we are going to setup the deployment. This job will also run on `ubuntu-latest` environment but his time it will need the `build` job to be completed, as we do not want to deploy an application that is not building.
 
-The first step is to configure the AWS credentials, to do so we are going to use the action available on `aws-actions/configure-aws-credentials@v1`. To use this actions we need to pass the ID and secret of our user and he AWS region we are using, which we defined in the secrets before.
+The first step is to configure the AWS credentials, to do so we are going to use the action available on `aws-actions/configure-aws-credentials@v1`. To use this action we need to pass the ID and secret of our user and the AWS region we are using, which we defined in the secrets before.
 
-Next to execute the deployment, we are going to run a command passing our deployment parameters as well as our repository's name and the hash of the commit we want to use. The `application-name` and `deployment-group-name` are respectively the name of the application and the deployment group we created on **CodeDeploy**. By using the variables `github.repository`  and `github.sha` we have the current repository and the hash of the last commit. 
+Next, to execute the deployment, we are going to run a command passing our deployment parameters as well as our repository's name and the hash of the commit we want to use. The `application-name` and `deployment-group-name` are respectively the name of the application and the deployment group we created on **CodeDeploy**. By using the variables `github.repository`  and `github.sha` we have the current repository and the hash of the last commit. 
+## Conclusion
 
-#
 Now that everything is set, once you push to your repository, the workflow will be triggered and it will be deployed to your EC2 instance on AWS. To access your app's default ports (HTTP, HTTPS), use the public address of your EC2 instance, which can be easily found in the instance's summary.
