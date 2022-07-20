@@ -5,37 +5,6 @@ on:
         - AWS
         
 jobs:
-  build:
-    name: Build project
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout AWS branch
-        uses: actions/checkout@v3
-        with:
-          ref: AWS
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-
-      - name: Build frontend
-        working-directory: ./front
-        run: |
-          npm install
-          npm run build
-    
-      - name: Build backend
-        working-directory: ./back
-        env:
-          AMADEUS_CLIENT_ID: ${{ secrets.AMADEUS_CLIENT_ID }}
-          AMADEUS_CLIENT_SECRET: ${{ secrets.AMADEUS_CLIENT_SECRET }}
-          PORT: 3000
-          AMADEUS_ENV: test
-        run: | 
-          npm install
-
   deploy:
     name: Deploy to AWS EC2 instance
     runs-on: ubuntu-latest

@@ -18,10 +18,13 @@ RUN npm run build
 
 WORKDIR /back
 COPY ./back/package.json .
-COPY ./back/app.js .
+COPY ./back/app.ts .
+COPY ./back/decs.d.ts .
+COPY ./back/tsconfig.json .
 
 RUN npm install
+RUN npm run build
 
 EXPOSE $PORT
 
-CMD npm run serve
+CMD npm run start
