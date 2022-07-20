@@ -79,14 +79,14 @@
 		return [departure, _return];
 	}
 
-	export async function newCalendar() {
+	async function newCalendar() {
 		await tick();
 		$fetchCalendar()
 			.then((res) => ($calendar = res))
 			.catch(() => dispatcher('error'));
 	}
 
-	export async function newPrices(newDatepairs: Datepair[]) {
+	async function newPrices(newDatepairs: Datepair[]) {
 		await tick();
 		$fetchNewPrices(newDatepairs)
 			.then((newPrices) => ($calendar = { ...$calendar, ...newPrices }))
@@ -130,6 +130,7 @@
 				(date) => `${date.date}>${format(newBorderDate, 'yyyy-MM-dd')}` as Datepair
 			);
 		}
+    newPrices(newDatepairs);
 	}
 
 	onMount(() => {

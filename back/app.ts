@@ -21,7 +21,7 @@ if (!process.env.AMADEUS_CLIENT_SECRET)
 let app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, "..", "..", "front", "build")));
+app.use(express.static(path.join(__dirname, '..', '..', 'front', 'build')));
 //Add logger
 app.use((req, _, next) => {
   let requestReceived = new Date();
@@ -44,13 +44,15 @@ let amadeus = new Amadeus({
 let limiterArgs: any;
 if (AMADEUS_HOST === 'test') {
   limiterArgs = {
-    minTime: 100
+    minTime: 100,
+    maxConcurrent: 50
   }
 } else {
   limiterArgs = {
     reservoir: 40,
     reservoirRefreshAmount: 40,
-    reservoirRefreshInterval: 1000
+    reservoirRefreshInterval: 1000,
+    maxConcurrent: 50
   }
 }
 const limiter = new Bottleneck(limiterArgs);
@@ -332,7 +334,7 @@ function pricesForDatepairs(
         })
         .finally(() => {
           responseCount++;
-          if (responseCount === 49) {
+          if (responseCount === datepairs.length) {
             console.log(
               `Request completed with ${responseCount - errorCount
               } successes and ${errorCount} errors.`
