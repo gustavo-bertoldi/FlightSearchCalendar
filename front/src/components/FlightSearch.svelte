@@ -72,62 +72,6 @@
 	const returnDateRules = [(v: string) => !!v || 'Please enter the date of return'];
 	//Adults can't be empty
 	const adultsRules = [(v: string) => !!v || 'Please enter number of adults'];
-	/**
-	 * Helper function to validate dates
-	 * This function advances the selected date by one, two or three days depending on the distance of
-	 * today's date. This needs to be done because calendar shows prices from up to three days before
-	 * the selected dates, but these dates can't be in the past.
-	 * Ex.: The user selects tomorrow date as departure date, dates from -1 and -2 days would be in the
-	 * past. So we advance the selected date by two days to avoid past dates while keeping the selected
-	 * date shown in the calendar.
-	 * @param {Date} date Date to be verified
-	 * @return {Date} Verified and valid date
-	 */
-	/*
-	function dateVerification(date: Date): Date {
-		const today = new Date();
-		const tomorrow = addDays(today, 1);
-		const dayAfterTomorrow = addDays(today, 2);
-
-		if (isSameDay(date, today)) {
-			date = addDays(date, 3);
-		} else if (isSameDay(date, tomorrow)) {
-			date = addDays(date, 2);
-		} else if (isSameDay(date, dayAfterTomorrow)) {
-			date = addDays(date, 1);
-		}
-		return date;
-	}
-  */
-	/**
-	 * Helper function to retrieve and prepare data entered in the search form to be sent in the request
-	 * @param {boolean} forCalendar This parameter is used to perform additional verification on date fields
-	 * and return additional parameter in the case of a calendar scroll
-	 * @returns {object} Object containing all the needed data, after treatment, to be sent in the request
-	 */
-	/*
-	function getFormData(forCalendar: boolean): FlightSearchForm {
-		let departureDate = new Date();
-		let returnDate = new Date(flightReturnDate);
-		let formData: FlightSearchForm = {
-			origin: flightOrigin,
-			destination: flightDestination,
-			adults: parseInt(nbAdults),
-			class: flightClass.toUpperCase().replace(' ', '_'),
-			departureDateFormatted: format(departureDate, 'yyyy-MM-dd'),
-			returnDateFormatted: format(returnDate, 'yyyy-MM-dd')
-		};
-
-		if (forCalendar) {
-			departureDate = dateVerification(departureDate);
-			returnDate = dateVerification(returnDate);
-			formData.selectedDepartureDate = flightDepartureDate;
-			formData.selectedReturnDate = flightReturnDate;
-		}
-
-		return formData;
-	}
-  */
 
 	function newSearch(newCalendar: boolean) {
 		loading = true;
@@ -138,14 +82,16 @@
 		$flightSearch()
 			.then((res) => {
 				$offersResult = res;
-				if (newCalendar) {
-					$fetchCalendar()
-						.then((cal) => ($calendar = cal))
-						.catch(() => dispatcher('error'));
-				}
 			})
 			.catch(() => dispatcher('error'))
 			.finally(() => (loading = false));
+
+    if (newCalendar) {
+      $calendar = {};
+			$fetchCalendar()
+				.then((cal) => ($calendar = cal))
+				.catch(() => dispatcher('error'));
+		}
 	}
 </script>
 
