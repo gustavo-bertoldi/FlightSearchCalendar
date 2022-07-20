@@ -21,7 +21,7 @@ if (!process.env.AMADEUS_CLIENT_SECRET)
 let app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, "..", "front", "build")));
+app.use(express.static(path.join(__dirname, "..", "..", "front", "build")));
 //Add logger
 app.use((req, _, next) => {
   let requestReceived = new Date();
