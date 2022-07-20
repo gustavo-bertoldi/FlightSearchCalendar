@@ -171,8 +171,7 @@ function getFlightOffers(
         departureDate,
         returnDate,
         adults,
-        travelClass,
-        max: 1,
+        travelClass
       })
     )
     .then((res: any) => {
