@@ -1,7 +1,6 @@
 FROM node:16
 
 ARG PORT=3000
-ARG EC2_INSTANCE_IP=localhost:${PORT}
 
 WORKDIR /front
 COPY ./front/package.json .
@@ -12,16 +11,17 @@ COPY ./front/static ./static
 COPY ./front/src ./src
 
 RUN npm install
-RUN touch .env
-RUN echo "VITE_EC2_INSTANCE_IP=$EC2_INSTANCE_IP" > .env
 RUN npm run build
 
 WORKDIR /back
 COPY ./back/package.json .
-COPY ./back/app.js .
+COPY ./back/app.ts .
+COPY ./back/decs.d.ts .
+COPY ./back/tsconfig.json .
 
 RUN npm install
+RUN npm run build
 
 EXPOSE $PORT
 
-CMD npm run serve
+CMD npm run start
