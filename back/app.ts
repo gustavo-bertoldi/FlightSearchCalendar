@@ -23,11 +23,14 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "..", "front", "build")));
 //Add logger
-app.use((req, res, next) => {
-  let now = (new Date()).toLocaleString();
-  console.log(`Request received from ${req.ip} at ${now}. ${req.method} ${req.url.split('?')[0]}.`);
+app.use((req, _, next) => {
+  let requestReceived = new Date();
+  req.on('end', () => {
+    let time = (Date.now() - requestReceived.getTime())/1000;
+    console.log(`Request from ${req.ip} at ${requestReceived.toLocaleString()} completed in ${time.toFixed(2)}s. ${req.method} ${req.url.split('?')[0]}.`);
+  });
   next();
-})
+});
 
 //Configure Amadeus
 const AMADEUS_HOST = process.env.AMADEUS_ENV || "test";
