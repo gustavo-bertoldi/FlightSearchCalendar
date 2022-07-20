@@ -113,10 +113,9 @@
 			let firstReturnDate = new Date($returnDates[0].date);
 			if (isAfter(newBorderDate, firstReturnDate)) return;
 		} else if (type === 'return' && direction === -1) {
-			let lastDepartureDate = new Date($departureDates.at(-1)!.date);
-			if (isBefore(newBorderDate, lastDepartureDate)) return;
+			let firstDepartureDate = new Date($departureDates[0].date);
+			if (isBefore(newBorderDate, firstDepartureDate)) return;
 		}
-		console.log('passed');
 
 		let newDatesArray = datesArray(format(newCurrentDate, 'yyyy-MM-dd') as DateString);
 		let newDatepairs: Datepair[] = [];
@@ -131,8 +130,6 @@
 				(date) => `${date.date}>${format(newBorderDate, 'yyyy-MM-dd')}` as Datepair
 			);
 		}
-
-		newPrices(newDatepairs);
 	}
 
 	onMount(() => {
