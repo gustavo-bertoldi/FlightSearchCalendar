@@ -57,8 +57,8 @@ Select **AWS service** under **Trusted entity type** and **EC2** under **Use cas
 
 In the next screen you will have the possibility to attach policies to your role. We need the following policies:
 * AmazonEC2RoleforAWSCodeDeploy
-* SecretManagerReadWrite
-* CloudWatchPushLogs
+* SecretsManagerReadWrite
+* CloudWatchAgentServerPolicyEC2
 
 Yo can search policies using the search bar and select them using the checkbox to the left of its name. Select the three listed polices and click on next. In the **Name, review and create** window enter ***EC2Role*** for the name, leaving the rest as default, and click on **Create role** on the bottom.
 
@@ -206,7 +206,7 @@ For the **Environment configuration** choose **Amazon EC2 instances** and enter 
 For the **Agent configuration with AWS Systems Manager** leave as default. Finally, select **CodeDeployDefault.OnceAtATime** under **Deployment settings** and disable load balancing under **Load balancer**. Click on **Create deployment group**.
 
 ## **Application configuration**
-At this point, all the needed services should be correctly created and configures on AWS. In this section we are going to create an `appspec.yml` file to tell AWS how to build and deploy our application.
+At this point, all the needed services should be correctly created and configured on AWS. In this section we are going to create an `appspec.yml` file to tell AWS how to build and deploy our application.
 
 If you used our example application you can use the `appspec.yml` file we provided. Otherwise you can check the details on how to write this file [here](https://docs.aws.amazon.com/codedeploy/latest/userguide/reference-appspec-file.html).
 

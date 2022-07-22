@@ -1,1 +1,1 @@
-docker build -t flight-search-app --build-arg PORT=3000 --build-arg EC2_INSTANCE_IP='54.75.219.41' /home/ec2-user/FlightSearchApp
+docker build -t flight-search-app --build-arg EC2_INSTANCE_IP='3.87.174.127' /home/ec2-user/FlightSearchApp
