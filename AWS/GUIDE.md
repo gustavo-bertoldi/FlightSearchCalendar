@@ -28,30 +28,8 @@ This role is responsible for allowing the following:
 * Allow the instance to access secrets from **Secets Manager**.
 * Allow the instance to push logs to the **CloudWatch** service.
 
-To start, go to the **IAM** service using the search bar in tou AWS dashboard.
-First we are going to create a new **police** allowing the instance to push logs to **CloudWatch** service. 
-In the **IAM** service, in the menu on the left, select **Policies** under **Access management**, then select **Create policy** on the right. A new screen is going to open, select the **JSON** tab and paste the following code in the text field:
 
-```json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Action": [
-                "logs:CreateLogStream",
-                "logs:PutLogEvents",
-                "logs:CreateLogGroup"
-            ],
-            "Effect": "Allow",
-            "Resource": "*"
-        }
-    ]
-}
-```
-
-Click on **Next: Tags**, and then **Next: Review**. In the **Review police** window, enter *CloudWatchPushLogs* as the police's name and click on **Create police** in the page's bottom.
-
-Once the police is created, go back to the **IAM** service dashboard and in the menu on the left, click on **Roles** under **Access management** and then on **Create role** in the right, a new screen in going to open.
+In the **IAM** service dashboard and in the menu on the left, click on **Roles** under **Access management** and then on **Create role** in the right, a new screen in going to open.
 
 Select **AWS service** under **Trusted entity type** and **EC2** under **Use case** and click on next.
 
@@ -68,11 +46,8 @@ Yo can search policies using the search bar and select them using the checkbox t
 
 This role will be responsible for the following:
 * Providing full access to Amazon EC2 instances. Allowing the service to download the source files in the instance and execute scripts.
-* Provides CodeDeploy service access to expand tags and interact with Auto Scaling on your behalf.
 
-Now we are going to create a role for the **CodeDeploy** service. To do it follow the same steps as before. We are going to name it **CodeDeployRole**. In the permissions screen, add the following permissions:
-* AmazonEC2FullAccess  
-* AWSCodeDeployRole
+Now we are going to create a role for the **CodeDeploy** service. To do it follow the same steps as before. But this time, under **Use case**, use the menu under **Use cases for other AWS services** to select **CodeDeploy**, and select **CodeDeploy** from the options that will appear. You can leave everything else as default until the creation of the role, name it ***CodeDeployRole***.
 
 ---
 
@@ -90,9 +65,9 @@ Go to the **CloudWatch** service and select **Log groups** under **Logs** on the
 ## Configure Secrets Manager
 
 For this section we are going to configure AWS's **Secrets Manager** service to securely store our Amadeus credentials.
-Go to the **Secrets Manager dashboard** and click on **Store a new secret**. Seelct **Other type of secret** under **Secret type** and add the key value pairs for `AMADEUS_CLIENT_ID` and `AMADEUS_CLIENT_SECRET` keys and click on next.
+Go to the **Secrets Manager dashboard** and click on **Store a new secret**. Select **Other type of secret** under **Secret type** and add the key value pairs for `AMADEUS_CLIENT_ID` and `AMADEUS_CLIENT_SECRET` keys and click on next.
 
-Add a name that alow you to quickly find your secret, for example `MyApp/AMADEUS_CLIENT_ID`. Leave everything else as default and click on **Next**.
+Add a name that alow you to quickly find your secret, for example `MyApp/AMADEUS_CREDENTIALS`. Leave everything else as default and click on **Next**.
 
 In the next window you can configure automatic rotation of your secrets if you want, as we don't need this feature for our Amadeus credentials you can just click on **Next**.
 
@@ -112,7 +87,7 @@ On the **Launch an instance** page, enter the following configuration. Leave no 
   - **Amazon Machine Image (AMI)**: Amazon Linux 2 AMI (HVM) - Kernel 5.10, SSD Volume Type
   - **Architecture**: 64-bit (x86)
 - **Instance type**: t2.micro
-- **Key pair (login)**: Optional: here you can create a key pair if you want to connect to your instance using ```ssh``` later.
+- **Key pair (login)**: Optional: here you can create a key pair if you want to connect to your instance using `ssh` later.
 - **Network settings**:
   - **Firewall (security groups)**: Create security group
     - **Allow SSH traffic from**: Checked, Anywhere 0.0.0.0/0
@@ -307,6 +282,7 @@ The `jobs` sections describes the actions itself. In this example we defined onl
 The first step is to configure the AWS credentials, to do so we are going to use the action available on `aws-actions/configure-aws-credentials@v1`. To use this action we need to pass the ID and secret of our user and the AWS region we are using, which we defined in the secrets before.
 
 Next, to execute the deployment, we are going to run a command passing our deployment parameters as well as our repository's name and the hash of the commit we want to use. The `application-name` and `deployment-group-name` are respectively the name of the application and the deployment group we created on **CodeDeploy**. By using the variables `github.repository`  and `github.sha` we have the current repository and the hash of the last commit. 
+
 ## Conclusion
 
 Now that everything is set, once you push to your repository, the workflow will be triggered and it will be deployed to your EC2 instance on AWS. To access your app's default ports (HTTP, HTTPS), use the public address of your EC2 instance, which can be easily found in the instance's summary.
