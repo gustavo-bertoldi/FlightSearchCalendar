@@ -23,7 +23,7 @@ Once the variables are set simply run the following commands. App will be availa
 
 ```bash
 docker build -t "amadeus-flight-search" --name "Amadeus Flight Search"
-docker run "amadeus-flight-search"
+docker run -p HOST_PORT:CONTAINER_PORT "amadeus-flight-search" #Default: docker run -p 3000:3000 "amadeus-flight-search"
 ``` 
 
 ## Run locally
