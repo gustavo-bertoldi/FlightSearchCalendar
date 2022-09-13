@@ -20,7 +20,6 @@ COPY ./back/package-lock.json .
 COPY ./back/app.ts .
 COPY ./back/decs.d.ts .
 COPY ./back/tsconfig.json .
-COPY ./back/.env .
 
 RUN npm install
 RUN npm run build
