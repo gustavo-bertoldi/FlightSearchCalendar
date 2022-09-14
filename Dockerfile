@@ -1,6 +1,7 @@
 FROM node:16
 
 ARG PORT=3000
+ARG FLY_INSTANCE_IP=flight-search.fly.dev
 
 WORKDIR /front
 COPY ./front/package.json .
@@ -12,6 +13,7 @@ COPY ./front/static ./static
 COPY ./front/src ./src
 
 RUN npm install
+RUN echo "VITE_FLY_INSTANCE_IP=$FLY_INSTANCE_IP" > .env
 RUN npm run build
 
 WORKDIR /back
