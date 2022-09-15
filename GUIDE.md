@@ -103,7 +103,7 @@ To personalize your network security group and allow other traffic, Go to the **
 
 ## Prepare EC2 instance
 
-With the new instance created, select it in the **Instances** list and click on connect to access it, note you will have to wait for the instance to be initilized before connecting, this process can take a couple of minutes. Alternatively, you can connect to it using the `ssh` key generated earlier.
+With the new instance created, select it in the **Instances** list and click on connect to access it, note you will have to wait for the instance to be initialized before connecting, this process can take a couple of minutes. Alternatively, you can connect to it using the `ssh` key generated earlier.
 
 Now we are going to install the necessary services in the instance in order to run our application and the automatic deployment.
 
@@ -165,6 +165,17 @@ Then restart the docker service with the following command:
 
 ```bash
 sudo service docker restart
+```
+
+### Install jq
+`jq` is a JSON parser utility for the command line that allows us to quickly parse our key-value secrets from **Secrets Manager**.
+```bash
+sudo yum install jq
+```
+
+You can easily fetch your secrets with the following command:
+```bash
+MY_SECRET=$(aws secretsmanager get-secret-value --region SECRET_REGION --secret-id SECRET_NAME --query SecretString --output text | jq -r .KEY_OF_KEY_VALUE_PAIR)
 ```
 
 ## **CodeDeploy configuration**
